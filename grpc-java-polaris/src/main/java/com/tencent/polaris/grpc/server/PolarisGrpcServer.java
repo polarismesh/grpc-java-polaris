@@ -39,29 +39,35 @@ import java.util.concurrent.TimeUnit;
 /**
  * @author lixiaoshuang
  */
-public class ServerAgent {
+public class PolarisGrpcServer {
     
-    private final Logger log = LoggerFactory.getLogger(ServerAgent.class);
+    private final Logger log = LoggerFactory.getLogger(PolarisGrpcServer.class);
     
     private final ProviderAPI providerAPI = DiscoveryAPIFactory.createProviderAPI();
     
-    private int port;
+    private final int ttl = 2;
     
-    private String service;
+    private final int port;
+    
+    private final String serviceName;
+    
+    private final String namespace;
     
     private List<BindableService> bindableServices;
     
     private ScheduledExecutorService executorService = new ScheduledThreadPoolExecutor(5);
     
-    public ServerAgent(int port, String service, List<BindableService> bindableServices) {
+    public PolarisGrpcServer(int port, String namespace, String serviceName, List<BindableService> bindableServices) {
         this.port = port;
-        this.service = service;
+        this.namespace = namespace;
+        this.serviceName = serviceName;
         this.bindableServices = bindableServices;
     }
     
     public void start() {
         if (port <= 0) {
             log.error("abnormal port");
+            return;
         }
         ServerBuilder<?> serverBuilder = ServerBuilder.forPort(port);
         if (CollectionUtils.isNotEmpty(bindableServices)) {
@@ -97,11 +103,11 @@ public class ServerAgent {
      */
     private void registerInstance() {
         InstanceRegisterRequest request = new InstanceRegisterRequest();
-        request.setNamespace("default");
-        request.setService(service);
+        request.setNamespace(namespace);
+        request.setService(serviceName);
         request.setHost(IpUtil.getLocalHost());
         request.setPort(port);
-        request.setTtl(2);
+        request.setTtl(ttl);
         InstanceRegisterResponse response = providerAPI.register(request);
         log.info("grpc server register polaris success,instanceId:{}", response.getInstanceId());
         this.heartBeat();
@@ -115,12 +121,12 @@ public class ServerAgent {
         executorService.scheduleAtFixedRate(() -> {
             log.info("Report service heartbeat");
             InstanceHeartbeatRequest request = new InstanceHeartbeatRequest();
-            request.setNamespace("default");
-            request.setService(service);
+            request.setNamespace(namespace);
+            request.setService(serviceName);
             request.setHost(IpUtil.getLocalHost());
             request.setPort(port);
             providerAPI.heartbeat(request);
-        }, 0, 500, TimeUnit.MILLISECONDS);
+        }, 0, ttl, TimeUnit.SECONDS);
     }
     
     /**
@@ -129,8 +135,8 @@ public class ServerAgent {
     private void deRegister() {
         log.info("Virtual machine shut down Anti-registration service");
         InstanceDeregisterRequest request = new InstanceDeregisterRequest();
-        request.setNamespace("default");
-        request.setService(service);
+        request.setNamespace(namespace);
+        request.setService(serviceName);
         request.setHost(IpUtil.getLocalHost());
         request.setPort(port);
         providerAPI.deRegister(request);

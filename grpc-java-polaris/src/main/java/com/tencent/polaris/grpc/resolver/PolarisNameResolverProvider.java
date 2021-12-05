@@ -28,6 +28,10 @@ import java.net.URI;
  */
 public class PolarisNameResolverProvider extends NameResolverProvider {
     
+    private static final int DEFAULT_PRIORITY = 5;
+    
+    private static final String DEFAULT_SCHEME = "polaris";
+    
     private final String namespace;
     
     private final String service;
@@ -67,12 +71,12 @@ public class PolarisNameResolverProvider extends NameResolverProvider {
      */
     @Override
     protected int priority() {
-        return 5;
+        return DEFAULT_PRIORITY;
     }
     
     
     @Override
     public String getDefaultScheme() {
-        return "polaris";
+        return DEFAULT_SCHEME;
     }
 }

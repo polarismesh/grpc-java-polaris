@@ -28,7 +28,7 @@ public class ServerMain {
     
     public static void main(String[] args) {
         List<BindableService> services = Lists.newArrayList(new HelloImpl());
-        ServerAgent serverAgent = new ServerAgent(50051, "grpc-demo-java", services);
-        serverAgent.start();
+        PolarisGrpcServer polarisGrpcServer = new PolarisGrpcServer(50051, "default", "grpc-demo-java", services);
+        polarisGrpcServer.start();
     }
 }
