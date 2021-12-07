@@ -134,7 +134,7 @@ public class PolarisGrpcServer {
      * Service deregister
      */
     private void deregister() {
-        log.info("Virtual machine shut down Anti-registration service");
+        log.info("Virtual machine shut down deregister service");
         InstanceDeregisterRequest request = new InstanceDeregisterRequest();
         request.setNamespace(namespace);
         request.setService(serviceName);
