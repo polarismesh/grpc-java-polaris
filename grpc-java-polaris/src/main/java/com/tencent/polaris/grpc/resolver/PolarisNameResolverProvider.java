@@ -22,7 +22,7 @@ import io.grpc.NameResolverProvider;
 import java.net.URI;
 
 /**
- * 服务提供者类
+ * Service provider class
  *
  * @author lixiaoshuang
  */
@@ -43,7 +43,7 @@ public class PolarisNameResolverProvider extends NameResolverProvider {
     }
     
     /**
-     * 服务发现类
+     * Create service discovery class
      *
      * @param targetUri
      * @param args
@@ -55,7 +55,7 @@ public class PolarisNameResolverProvider extends NameResolverProvider {
     }
     
     /**
-     * 服务是否可用
+     * service is available
      *
      * @return
      */
@@ -65,7 +65,7 @@ public class PolarisNameResolverProvider extends NameResolverProvider {
     }
     
     /**
-     * 默认优先级5
+     * Default priority 5
      *
      * @return
      */

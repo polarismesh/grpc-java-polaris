@@ -89,8 +89,9 @@ public class PolarisGrpcServer {
             Runtime.getRuntime().addShutdownHook(new Thread(() -> {
                 log.info("shutting sown grpc server sine JVM is shutting down");
                 executorService.shutdownNow();
-                finalServer.shutdown();
                 deRegister();
+                providerAPI.destroy();
+                finalServer.shutdown();
             }));
             server.awaitTermination();
         } catch (IOException | InterruptedException e) {
@@ -99,7 +100,7 @@ public class PolarisGrpcServer {
     }
     
     /**
-     * 注册服务
+     * Register service
      */
     private void registerInstance() {
         InstanceRegisterRequest request = new InstanceRegisterRequest();
@@ -115,7 +116,7 @@ public class PolarisGrpcServer {
     
     
     /**
-     * 上报心跳
+     * Report heartbeat
      */
     private void heartBeat() {
         executorService.scheduleAtFixedRate(() -> {
@@ -130,7 +131,7 @@ public class PolarisGrpcServer {
     }
     
     /**
-     * 服务反注册
+     * Service un registration
      */
     private void deRegister() {
         log.info("Virtual machine shut down Anti-registration service");

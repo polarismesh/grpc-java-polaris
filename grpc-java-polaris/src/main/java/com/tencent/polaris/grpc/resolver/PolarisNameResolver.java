@@ -33,7 +33,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * 服务发现类
+ * Service discovery class
  *
  * @author lixiaoshuang
  */
@@ -63,7 +63,7 @@ public class PolarisNameResolver extends NameResolver {
         request.setNamespace(namespace);
         request.setService(service);
         InstancesResponse response = consumerAPI.getAllInstance(request);
-        log.info("getAllInstance response:{}", response);
+        log.debug("getAllInstance response:{}", response);
         consumerAPI.destroy();
         List<EquivalentAddressGroup> equivalentAddressGroups = Arrays.stream(response.getInstances())
                 .filter(Instance::isHealthy).map(instance -> new EquivalentAddressGroup(

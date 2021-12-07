@@ -32,7 +32,7 @@ public class IpUtil {
     private static final String LOCALHOST_VALUE = "127.0.0.1";
     
     /**
-     * 获取本机ip
+     * Get local ip
      *
      * @return
      */
