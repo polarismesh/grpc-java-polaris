@@ -131,7 +131,7 @@ public class PolarisGrpcServer {
     }
     
     /**
-     * Service un registration
+     * Service deregister
      */
     private void deregister() {
         log.info("Virtual machine shut down Anti-registration service");
