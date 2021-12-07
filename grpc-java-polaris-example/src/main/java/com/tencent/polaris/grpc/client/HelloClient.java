@@ -30,15 +30,12 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class HelloClient {
     
-    private static final String service = "grpc-demo-java";
-    
-    private static final String namespace = "default";
-    
     
     public static void main(String[] args) {
-        NameResolverRegistry.getDefaultRegistry().register(new PolarisNameResolverProvider(namespace, service));
+        NameResolverRegistry.getDefaultRegistry().register(new PolarisNameResolverProvider());
         
-        ManagedChannel channel = ManagedChannelBuilder.forTarget("polaris").usePlaintext().build();
+        ManagedChannel channel = ManagedChannelBuilder.forTarget("polaris://grpc-demo-java?namespace=default")
+                .usePlaintext().build();
         
         HelloGrpc.HelloBlockingStub helloBlockingStub = HelloGrpc.newBlockingStub(channel);
         HelloPolaris.request request = HelloPolaris.request.newBuilder().setMsg("hello polaris").build();

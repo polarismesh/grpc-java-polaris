@@ -32,14 +32,7 @@ public class PolarisNameResolverProvider extends NameResolverProvider {
     
     private static final String DEFAULT_SCHEME = "polaris";
     
-    private final String namespace;
-    
-    private final String service;
-    
-    
-    public PolarisNameResolverProvider(String namespace, String service) {
-        this.namespace = namespace;
-        this.service = service;
+    public PolarisNameResolverProvider() {
     }
     
     /**
@@ -51,7 +44,7 @@ public class PolarisNameResolverProvider extends NameResolverProvider {
      */
     @Override
     public NameResolver newNameResolver(URI targetUri, NameResolver.Args args) {
-        return new PolarisNameResolver(namespace, service);
+        return new PolarisNameResolver(targetUri);
     }
     
     /**

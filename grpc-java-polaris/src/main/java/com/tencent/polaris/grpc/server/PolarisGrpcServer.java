@@ -45,7 +45,7 @@ public class PolarisGrpcServer {
     
     private final ProviderAPI providerAPI = DiscoveryAPIFactory.createProviderAPI();
     
-    private final int ttl = 2;
+    private final int ttl = 5;
     
     private final int port;
     
@@ -89,7 +89,7 @@ public class PolarisGrpcServer {
             Runtime.getRuntime().addShutdownHook(new Thread(() -> {
                 log.info("shutting sown grpc server sine JVM is shutting down");
                 executorService.shutdownNow();
-                deRegister();
+                deregister();
                 providerAPI.destroy();
                 finalServer.shutdown();
             }));
@@ -133,7 +133,7 @@ public class PolarisGrpcServer {
     /**
      * Service un registration
      */
-    private void deRegister() {
+    private void deregister() {
         log.info("Virtual machine shut down Anti-registration service");
         InstanceDeregisterRequest request = new InstanceDeregisterRequest();
         request.setNamespace(namespace);

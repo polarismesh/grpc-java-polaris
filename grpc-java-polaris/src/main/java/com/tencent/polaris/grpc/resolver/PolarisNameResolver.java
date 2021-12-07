@@ -28,6 +28,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.InetSocketAddress;
+import java.net.URI;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -47,9 +48,10 @@ public class PolarisNameResolver extends NameResolver {
     
     private final String service;
     
-    public PolarisNameResolver(String namespace, String service) {
-        this.namespace = namespace;
-        this.service = service;
+    public PolarisNameResolver(URI targetUri) {
+        this.service = targetUri.getAuthority();
+        this.namespace = targetUri.getQuery().split("=")[1];
+        Runtime.getRuntime().addShutdownHook(new Thread(consumerAPI::destroy));
     }
     
     @Override
