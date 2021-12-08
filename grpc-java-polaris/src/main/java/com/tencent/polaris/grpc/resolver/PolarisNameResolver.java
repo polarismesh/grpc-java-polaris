@@ -21,6 +21,7 @@ import com.tencent.polaris.api.pojo.Instance;
 import com.tencent.polaris.api.rpc.GetAllInstancesRequest;
 import com.tencent.polaris.api.rpc.InstancesResponse;
 import com.tencent.polaris.factory.api.DiscoveryAPIFactory;
+import com.tencent.polaris.grpc.util.JvmShutdownHookUtil;
 import io.grpc.Attributes;
 import io.grpc.EquivalentAddressGroup;
 import io.grpc.NameResolver;
@@ -51,7 +52,7 @@ public class PolarisNameResolver extends NameResolver {
     public PolarisNameResolver(URI targetUri) {
         this.service = targetUri.getAuthority();
         this.namespace = targetUri.getQuery().split("=")[1];
-        Runtime.getRuntime().addShutdownHook(new Thread(consumerAPI::destroy));
+        JvmShutdownHookUtil.addHook(consumerAPI::destroy);
     }
     
     @Override
@@ -66,7 +67,6 @@ public class PolarisNameResolver extends NameResolver {
         request.setService(service);
         InstancesResponse response = consumerAPI.getAllInstance(request);
         log.debug("getAllInstance response:{}", response);
-        consumerAPI.destroy();
         List<EquivalentAddressGroup> equivalentAddressGroups = Arrays.stream(response.getInstances())
                 .filter(Instance::isHealthy).map(instance -> new EquivalentAddressGroup(
                         new InetSocketAddress(instance.getHost(), instance.getPort()))).collect(Collectors.toList());

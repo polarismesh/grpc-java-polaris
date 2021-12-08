@@ -18,8 +18,12 @@ package com.tencent.polaris.grpc.resolver;
 
 import io.grpc.NameResolver;
 import io.grpc.NameResolverProvider;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.net.URI;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Service provider class
@@ -28,9 +32,13 @@ import java.net.URI;
  */
 public class PolarisNameResolverProvider extends NameResolverProvider {
     
+    private final Logger log = LoggerFactory.getLogger(PolarisNameResolverProvider.class);
+    
     private static final int DEFAULT_PRIORITY = 5;
     
     private static final String DEFAULT_SCHEME = "polaris";
+    
+    private static final String PATTERN = "polaris://[a-zA-Z0-9_:.-]{1,128}\\?namespace=[a-zA-Z0-9_:.-]{1,128}";
     
     public PolarisNameResolverProvider() {
     }
@@ -44,6 +52,12 @@ public class PolarisNameResolverProvider extends NameResolverProvider {
      */
     @Override
     public NameResolver newNameResolver(URI targetUri, NameResolver.Args args) {
+        Pattern pattern = Pattern.compile(PATTERN);
+        Matcher matcher = pattern.matcher(targetUri.toString());
+        if (!matcher.matches()) {
+            log.error("target format is wrong,reference: polaris://[serviceName]?namespace=[namespace]");
+            return null;
+        }
         return new PolarisNameResolver(targetUri);
     }
     
@@ -71,5 +85,11 @@ public class PolarisNameResolverProvider extends NameResolverProvider {
     @Override
     public String getDefaultScheme() {
         return DEFAULT_SCHEME;
+    }
+    
+    public static void main(String[] args) {
+        Pattern r = Pattern.compile(PATTERN);
+        Matcher m = r.matcher("polaris://desvelxss-.dfsdf?namespace=deve.-test");
+        System.out.println(m.matches());
     }
 }

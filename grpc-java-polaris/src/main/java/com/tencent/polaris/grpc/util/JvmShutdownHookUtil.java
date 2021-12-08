@@ -14,31 +14,19 @@
  * the License.
  */
 
-package com.tencent.polaris.grpc.server;
-
-import com.google.common.collect.Lists;
-import io.grpc.BindableService;
-
-import java.util.List;
+package com.tencent.polaris.grpc.util;
 
 /**
  * @author lixiaoshuang
  */
-public class ServerMain {
+public class JvmShutdownHookUtil {
     
-    public static void main(String[] args) {
-        
-        List<BindableService> services = Lists.newArrayList(new HelloImpl());
-        
-        PolarisGrpcServer polarisGrpcServer = PolarisGrpcServer.builder()
-                .port(50051)
-                .namespace("default")
-                .serviceName("grpc-demo-java")
-                .metaData(null)
-                .bindableServices(services)
-                .build();
-        
-        polarisGrpcServer.start();
-        
+    /**
+     * Add JVM callback hooks
+     *
+     * @param runnable
+     */
+    public static void addHook(Runnable runnable) {
+        Runtime.getRuntime().addShutdownHook(new Thread(runnable));
     }
 }

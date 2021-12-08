@@ -30,10 +30,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class HelloClient {
     
-    
     public static void main(String[] args) {
         NameResolverRegistry.getDefaultRegistry().register(new PolarisNameResolverProvider());
-        
         ManagedChannel channel = ManagedChannelBuilder.forTarget("polaris://grpc-demo-java?namespace=default")
                 .usePlaintext().build();
         

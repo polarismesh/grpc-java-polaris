@@ -24,6 +24,7 @@ import com.tencent.polaris.api.rpc.InstanceRegisterResponse;
 import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.factory.api.DiscoveryAPIFactory;
 import com.tencent.polaris.grpc.util.IpUtil;
+import com.tencent.polaris.grpc.util.JvmShutdownHookUtil;
 import io.grpc.BindableService;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
@@ -32,6 +33,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -53,15 +55,22 @@ public class PolarisGrpcServer {
     
     private final String namespace;
     
-    private List<BindableService> bindableServices;
+    private final Map<String, String> metaData;
     
-    private ScheduledExecutorService executorService = new ScheduledThreadPoolExecutor(5);
+    private final List<BindableService> bindableServices;
     
-    public PolarisGrpcServer(int port, String namespace, String serviceName, List<BindableService> bindableServices) {
-        this.port = port;
-        this.namespace = namespace;
-        this.serviceName = serviceName;
-        this.bindableServices = bindableServices;
+    private final ScheduledExecutorService executorService = new ScheduledThreadPoolExecutor(5);
+    
+    private PolarisGrpcServer(Builder builder) {
+        this.port = builder.port;
+        this.serviceName = builder.serviceName;
+        this.namespace = builder.namespace;
+        this.bindableServices = builder.bindableServices;
+        this.metaData = builder.metaData;
+    }
+    
+    public static Builder builder() {
+        return new Builder();
     }
     
     public void start() {
@@ -86,18 +95,63 @@ public class PolarisGrpcServer {
             }
             
             Server finalServer = server;
-            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            JvmShutdownHookUtil.addHook(() -> {
                 log.info("shutting sown grpc server sine JVM is shutting down");
-                executorService.shutdownNow();
+                //                executorService.shutdownNow();
                 deregister();
                 providerAPI.destroy();
                 finalServer.shutdown();
-            }));
+            });
             server.awaitTermination();
         } catch (IOException | InterruptedException e) {
             log.error("grpc server started error, msg: {}", e.getMessage());
         }
     }
+    
+    
+    public static class Builder {
+        
+        private int port;
+        
+        private String serviceName;
+        
+        private String namespace;
+        
+        private List<BindableService> bindableServices;
+        
+        private Map<String, String> metaData;
+        
+        
+        public Builder port(int port) {
+            this.port = port;
+            return this;
+        }
+        
+        public Builder serviceName(String serviceName) {
+            this.serviceName = serviceName;
+            return this;
+        }
+        
+        public Builder namespace(String namespace) {
+            this.namespace = namespace;
+            return this;
+        }
+        
+        public Builder bindableServices(List<BindableService> bindableServices) {
+            this.bindableServices = bindableServices;
+            return this;
+        }
+        
+        public Builder metaData(Map<String, String> metadata) {
+            this.metaData = metadata;
+            return this;
+        }
+        
+        public PolarisGrpcServer build() {
+            return new PolarisGrpcServer(this);
+        }
+    }
+    
     
     /**
      * Register service
@@ -109,6 +163,7 @@ public class PolarisGrpcServer {
         request.setHost(IpUtil.getLocalHost());
         request.setPort(port);
         request.setTtl(ttl);
+        request.setMetadata(metaData);
         InstanceRegisterResponse response = providerAPI.register(request);
         log.info("grpc server register polaris success,instanceId:{}", response.getInstanceId());
         this.heartBeat();
