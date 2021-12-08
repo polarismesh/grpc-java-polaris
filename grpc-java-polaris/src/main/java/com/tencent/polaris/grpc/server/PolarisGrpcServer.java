@@ -17,6 +17,7 @@
 package com.tencent.polaris.grpc.server;
 
 import com.tencent.polaris.api.core.ProviderAPI;
+import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.rpc.InstanceDeregisterRequest;
 import com.tencent.polaris.api.rpc.InstanceHeartbeatRequest;
 import com.tencent.polaris.api.rpc.InstanceRegisterRequest;
@@ -97,7 +98,7 @@ public class PolarisGrpcServer {
             Server finalServer = server;
             JvmShutdownHookUtil.addHook(() -> {
                 log.info("shutting sown grpc server sine JVM is shutting down");
-                //                executorService.shutdownNow();
+                executorService.shutdownNow();
                 deregister();
                 providerAPI.destroy();
                 finalServer.shutdown();
@@ -181,8 +182,12 @@ public class PolarisGrpcServer {
             request.setService(serviceName);
             request.setHost(IpUtil.getLocalHost());
             request.setPort(port);
-            providerAPI.heartbeat(request);
-        }, 0, ttl, TimeUnit.SECONDS);
+            try {
+                providerAPI.heartbeat(request);
+            } catch (PolarisException e) {
+                log.error("Report service heartbeat error!", e);
+            }
+        }, 1, ttl, TimeUnit.SECONDS);
     }
     
     /**
