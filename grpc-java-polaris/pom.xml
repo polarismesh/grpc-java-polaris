@@ -14,12 +14,18 @@
     <properties>
         <maven.compiler.source>8</maven.compiler.source>
         <maven.compiler.target>8</maven.compiler.target>
+        <mockito-core.version>4.1.0</mockito-core.version>
     </properties>
     
     <dependencies>
         <dependency>
             <groupId>com.tencent.polaris</groupId>
             <artifactId>polaris-factory</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <version>${mockito-core.version}</version>
         </dependency>
     </dependencies>
 </project>

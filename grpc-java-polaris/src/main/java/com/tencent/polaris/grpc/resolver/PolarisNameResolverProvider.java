@@ -16,6 +16,9 @@
 
 package com.tencent.polaris.grpc.resolver;
 
+import com.tencent.polaris.api.core.ConsumerAPI;
+import com.tencent.polaris.factory.api.DiscoveryAPIFactory;
+import com.tencent.polaris.grpc.util.JvmShutdownHookUtil;
 import io.grpc.NameResolver;
 import io.grpc.NameResolverProvider;
 import org.slf4j.Logger;
@@ -40,7 +43,11 @@ public class PolarisNameResolverProvider extends NameResolverProvider {
     
     private static final String PATTERN = "polaris://[a-zA-Z0-9_:.-]{1,128}\\?namespace=[a-zA-Z0-9_:.-]{1,128}";
     
+    private final ConsumerAPI consumerAPI = DiscoveryAPIFactory.createConsumerAPI();
+    
+    
     public PolarisNameResolverProvider() {
+        JvmShutdownHookUtil.addHook(consumerAPI::destroy);
     }
     
     /**
@@ -58,7 +65,7 @@ public class PolarisNameResolverProvider extends NameResolverProvider {
             log.error("target format is wrong,reference: polaris://[serviceName]?namespace=[namespace]");
             return null;
         }
-        return new PolarisNameResolver(targetUri);
+        return new PolarisNameResolver(targetUri, consumerAPI);
     }
     
     /**
@@ -85,11 +92,5 @@ public class PolarisNameResolverProvider extends NameResolverProvider {
     @Override
     public String getDefaultScheme() {
         return DEFAULT_SCHEME;
-    }
-    
-    public static void main(String[] args) {
-        Pattern r = Pattern.compile(PATTERN);
-        Matcher m = r.matcher("polaris://desvelxss-.dfsdf?namespace=deve.-test");
-        System.out.println(m.matches());
     }
 }

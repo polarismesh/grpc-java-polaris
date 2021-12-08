@@ -16,18 +16,18 @@
 
 package com.tencent.polaris.grpc.util;
 
+import org.junit.Test;
+
+import static org.junit.Assert.*;
+
 /**
  * @author lixiaoshuang
  */
-public class JvmShutdownHookUtil {
+public class IpUtilTest {
     
-    /**
-     * Add JVM callback hooks
-     *
-     * @param runnable
-     */
-    public static boolean addHook(Runnable runnable) {
-        Runtime.getRuntime().addShutdownHook(new Thread(runnable));
-        return true;
+    @Test
+    public void testGetLocalHost() {
+        String localHost = IpUtil.getLocalHost();
+        assertNotNull(localHost);
     }
 }

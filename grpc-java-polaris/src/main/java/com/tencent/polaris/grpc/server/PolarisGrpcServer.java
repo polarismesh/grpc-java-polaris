@@ -74,10 +74,10 @@ public class PolarisGrpcServer {
         return new Builder();
     }
     
-    public void start() {
+    public boolean start() {
         if (port <= 0) {
             log.error("abnormal port");
-            return;
+            return false;
         }
         ServerBuilder<?> serverBuilder = ServerBuilder.forPort(port);
         if (CollectionUtils.isNotEmpty(bindableServices)) {
@@ -106,7 +106,9 @@ public class PolarisGrpcServer {
             server.awaitTermination();
         } catch (IOException | InterruptedException e) {
             log.error("grpc server started error, msg: {}", e.getMessage());
+            return false;
         }
+        return true;
     }
     
     
@@ -201,6 +203,5 @@ public class PolarisGrpcServer {
         request.setHost(IpUtil.getLocalHost());
         request.setPort(port);
         providerAPI.deRegister(request);
-        providerAPI.destroy();
     }
 }

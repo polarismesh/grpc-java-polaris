@@ -14,20 +14,30 @@
  * the License.
  */
 
-package com.tencent.polaris.grpc.util;
+package com.tencent.polaris.grpc.server;
+
+import org.junit.Test;
+
+import static org.junit.Assert.*;
 
 /**
  * @author lixiaoshuang
  */
-public class JvmShutdownHookUtil {
+public class PolarisGrpcServerTest {
     
-    /**
-     * Add JVM callback hooks
-     *
-     * @param runnable
-     */
-    public static boolean addHook(Runnable runnable) {
-        Runtime.getRuntime().addShutdownHook(new Thread(runnable));
-        return true;
+    @Test
+    public void testBuilder() {
+        PolarisGrpcServer polarisGrpcServer = PolarisGrpcServer.builder().port(8888).serviceName("grpc-demo-java")
+                .namespace("default").build();
+        assertNotNull(polarisGrpcServer);
+    }
+    
+    @Test
+    public void testStart() {
+        PolarisGrpcServer polarisGrpcServer = PolarisGrpcServer.builder().port(0).serviceName("grpc-demo-java")
+                .namespace("default").build();
+        
+        boolean start = polarisGrpcServer.start();
+        assertFalse(start);
     }
 }

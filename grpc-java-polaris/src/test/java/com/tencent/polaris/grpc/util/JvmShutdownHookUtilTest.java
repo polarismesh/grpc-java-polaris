@@ -16,18 +16,24 @@
 
 package com.tencent.polaris.grpc.util;
 
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.junit.MockitoJUnitRunner;
+
+import static org.junit.Assert.*;
+
 /**
  * @author lixiaoshuang
  */
-public class JvmShutdownHookUtil {
+public class JvmShutdownHookUtilTest {
     
-    /**
-     * Add JVM callback hooks
-     *
-     * @param runnable
-     */
-    public static boolean addHook(Runnable runnable) {
-        Runtime.getRuntime().addShutdownHook(new Thread(runnable));
-        return true;
+    @Test
+    public void testAddHook() {
+        boolean result = JvmShutdownHookUtil.addHook(() -> {
+        });
+        
+        assertTrue(result);
     }
 }
