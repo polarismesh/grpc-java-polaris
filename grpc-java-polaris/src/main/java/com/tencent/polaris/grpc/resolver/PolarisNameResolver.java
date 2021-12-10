@@ -50,7 +50,7 @@ public class PolarisNameResolver extends NameResolver {
     
     
     public PolarisNameResolver(URI targetUri, ConsumerAPI consumerAPI) {
-        this.service = targetUri.getAuthority();
+        this.service = targetUri.getHost();
         this.namespace = targetUri.getQuery().split("=")[1];
         this.consumerAPI = consumerAPI;
     }

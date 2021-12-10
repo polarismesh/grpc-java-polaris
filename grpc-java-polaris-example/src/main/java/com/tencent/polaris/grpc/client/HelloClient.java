@@ -32,7 +32,7 @@ public class HelloClient {
     
     public static void main(String[] args) {
         NameResolverRegistry.getDefaultRegistry().register(new PolarisNameResolverProvider());
-        ManagedChannel channel = ManagedChannelBuilder.forTarget("polaris://grpc-demo-java?namespace=default")
+        ManagedChannel channel = ManagedChannelBuilder.forTarget("polaris://grpc-demo-java:8080?namespace=default")
                 .usePlaintext().build();
         
         HelloGrpc.HelloBlockingStub helloBlockingStub = HelloGrpc.newBlockingStub(channel);
