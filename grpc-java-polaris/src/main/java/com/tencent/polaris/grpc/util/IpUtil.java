@@ -20,6 +20,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.util.Enumeration;
 
 
 /**
@@ -32,9 +34,38 @@ public class IpUtil {
     private static final String LOCALHOST_VALUE = "127.0.0.1";
     
     /**
-     * Get local ip
+     * Get real local ip
+     * <p>
+     * You can use getNetworkInterfaces()+getInetAddresses() to get all the IP addresses of the node, and then judge to
+     * find out the site-local address, this is a recommended solution
      *
-     * @return
+     * @return real ip
+     */
+    public static String getLocalHostExactAddress() {
+        try {
+            Enumeration<NetworkInterface> networkInterfaces = NetworkInterface.getNetworkInterfaces();
+            while (networkInterfaces.hasMoreElements()) {
+                NetworkInterface iface = networkInterfaces.nextElement();
+                for (Enumeration<InetAddress> inetAddrs = iface.getInetAddresses(); inetAddrs.hasMoreElements(); ) {
+                    InetAddress inetAddr = inetAddrs.nextElement();
+                    if (!inetAddr.isLoopbackAddress()) {
+                        if (inetAddr.isSiteLocalAddress()) {
+                            return inetAddr.getHostAddress();
+                        }
+                    }
+                }
+            }
+            return getLocalHost();
+        } catch (Exception e) {
+            log.error("getLocalHostExactAddress error", e);
+        }
+        return null;
+    }
+    
+    /**
+     * Get local ip
+     * <p>
+     * There are environmental restrictions. Different environments may get different ips.
      */
     public static String getLocalHost() {
         InetAddress inetAddress = null;

@@ -23,6 +23,7 @@ import com.tencent.polaris.api.rpc.InstanceHeartbeatRequest;
 import com.tencent.polaris.api.rpc.InstanceRegisterRequest;
 import com.tencent.polaris.api.rpc.InstanceRegisterResponse;
 import com.tencent.polaris.api.utils.CollectionUtils;
+import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.factory.api.DiscoveryAPIFactory;
 import com.tencent.polaris.grpc.util.IpUtil;
 import com.tencent.polaris.grpc.util.JvmShutdownHookUtil;
@@ -39,6 +40,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+
 /**
  * @author lixiaoshuang
  */
@@ -48,7 +50,7 @@ public class PolarisGrpcServer {
     
     private final ProviderAPI providerAPI = DiscoveryAPIFactory.createProviderAPI();
     
-    private final int ttl = 5;
+    private final int ttl;
     
     private final int port;
     
@@ -60,14 +62,23 @@ public class PolarisGrpcServer {
     
     private final List<BindableService> bindableServices;
     
-    private final ScheduledExecutorService executorService = new ScheduledThreadPoolExecutor(5);
+    private final String siteLocalIp;
+    
+    private final ScheduledExecutorService executorService = new ScheduledThreadPoolExecutor(1, r -> {
+        Thread t = new Thread(r);
+        t.setName("polaris-grpc-server");
+        return t;
+    });
+    
     
     private PolarisGrpcServer(Builder builder) {
+        this.ttl = builder.ttl;
         this.port = builder.port;
         this.serviceName = builder.serviceName;
         this.namespace = builder.namespace;
-        this.bindableServices = builder.bindableServices;
         this.metaData = builder.metaData;
+        this.bindableServices = builder.bindableServices;
+        this.siteLocalIp = builder.siteLocalIp;
     }
     
     public static Builder builder() {
@@ -124,6 +135,13 @@ public class PolarisGrpcServer {
         
         private Map<String, String> metaData;
         
+        private int ttl;
+        
+        private String siteLocalIp;
+        
+        private static final String DEFAULT_NAMESPACE = "default";
+        
+        private static final int DEFAULT_TTL = 5;
         
         public Builder port(int port) {
             this.port = port;
@@ -150,8 +168,31 @@ public class PolarisGrpcServer {
             return this;
         }
         
+        public Builder ttl(int ttl) {
+            this.ttl = ttl;
+            return this;
+        }
+        
+        public Builder siteLocalIp(String siteLocalIp) {
+            this.siteLocalIp = siteLocalIp;
+            return this;
+        }
+        
         public PolarisGrpcServer build() {
+            checkField();
             return new PolarisGrpcServer(this);
+        }
+        
+        private void checkField() {
+            if (StringUtils.isBlank(namespace)) {
+                this.namespace = DEFAULT_NAMESPACE;
+            }
+            if (ttl == 0) {
+                this.ttl = DEFAULT_TTL;
+            }
+            if (StringUtils.isBlank(siteLocalIp)) {
+                this.siteLocalIp = IpUtil.getLocalHostExactAddress();
+            }
         }
     }
     
@@ -163,7 +204,7 @@ public class PolarisGrpcServer {
         InstanceRegisterRequest request = new InstanceRegisterRequest();
         request.setNamespace(namespace);
         request.setService(serviceName);
-        request.setHost(IpUtil.getLocalHost());
+        request.setHost(siteLocalIp);
         request.setPort(port);
         request.setTtl(ttl);
         request.setMetadata(metaData);
@@ -182,7 +223,7 @@ public class PolarisGrpcServer {
             InstanceHeartbeatRequest request = new InstanceHeartbeatRequest();
             request.setNamespace(namespace);
             request.setService(serviceName);
-            request.setHost(IpUtil.getLocalHost());
+            request.setHost(siteLocalIp);
             request.setPort(port);
             try {
                 providerAPI.heartbeat(request);
@@ -200,7 +241,7 @@ public class PolarisGrpcServer {
         InstanceDeregisterRequest request = new InstanceDeregisterRequest();
         request.setNamespace(namespace);
         request.setService(serviceName);
-        request.setHost(IpUtil.getLocalHost());
+        request.setHost(siteLocalIp);
         request.setPort(port);
         providerAPI.deRegister(request);
     }

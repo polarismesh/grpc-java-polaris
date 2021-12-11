@@ -35,6 +35,8 @@ public class ServerMain {
                 .namespace("default")
                 .serviceName("grpc-demo-java")
                 .metaData(null)
+                .ttl(5)
+                .siteLocalIp("")
                 .bindableServices(services)
                 .build();
         

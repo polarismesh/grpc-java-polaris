@@ -26,6 +26,12 @@ import static org.junit.Assert.*;
 public class IpUtilTest {
     
     @Test
+    public void testGetLocalHostExactAddress() {
+        String localHost = IpUtil.getLocalHostExactAddress();
+        assertNotNull(localHost);
+    }
+    
+    @Test
     public void testGetLocalHost() {
         String localHost = IpUtil.getLocalHost();
         assertNotNull(localHost);
