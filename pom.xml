@@ -27,13 +27,13 @@
     
     <modules>
         <module>grpc-java-polaris</module>
-        <module>grpc-java-polaris-example</module>
+        <module>grpc-java-polaris-examples</module>
     </modules>
     
     <properties>
         <maven.compiler.source>8</maven.compiler.source>
         <maven.compiler.target>8</maven.compiler.target>
-        <polaris.version>1.2.1</polaris.version>
+        <polaris.version>1.2.2-SNAPSHOT</polaris.version>
     </properties>
     
     
