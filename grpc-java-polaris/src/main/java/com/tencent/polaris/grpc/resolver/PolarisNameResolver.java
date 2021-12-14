@@ -19,6 +19,7 @@ package com.tencent.polaris.grpc.resolver;
 import com.tencent.polaris.api.core.ConsumerAPI;
 import com.tencent.polaris.api.pojo.Instance;
 import com.tencent.polaris.api.rpc.GetAllInstancesRequest;
+import com.tencent.polaris.api.rpc.GetInstancesRequest;
 import com.tencent.polaris.api.rpc.InstancesResponse;
 import io.grpc.Attributes;
 import io.grpc.EquivalentAddressGroup;
@@ -62,11 +63,11 @@ public class PolarisNameResolver extends NameResolver {
     
     @Override
     public void start(Listener listener) {
-        GetAllInstancesRequest request = new GetAllInstancesRequest();
+        GetInstancesRequest request = new GetInstancesRequest();
         request.setNamespace(namespace);
         request.setService(service);
-        InstancesResponse response = consumerAPI.getAllInstance(request);
-        log.debug("getAllInstance response:{}", response);
+        InstancesResponse response = consumerAPI.getInstances(request);
+        log.debug("getInstances response:{}", response);
         List<EquivalentAddressGroup> equivalentAddressGroups = null;
         if (Objects.nonNull(response)) {
             equivalentAddressGroups = Arrays.stream(response.getInstances()).filter(Instance::isHealthy)
