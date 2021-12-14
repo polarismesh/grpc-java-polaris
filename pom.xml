@@ -5,21 +5,36 @@
     <modelVersion>4.0.0</modelVersion>
     
     <groupId>com.tencent.polaris</groupId>
-    <artifactId>grpc-java-polaris</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <artifactId>grpc-java-polaris-parent</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+    <packaging>pom</packaging>
+    
+    <licenses>
+        <license>
+            <name>BSD 3-Clause License</name>
+            <url>https://opensource.org/licenses/BSD-3-Clause</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+    
+    <developers>
+        <developer>
+            <name>lixiaoshuang</name>
+            <email>644968328@qq.com</email>
+        </developer>
+    </developers>
+    
+    
+    <modules>
+        <module>grpc-java-polaris</module>
+        <module>grpc-java-polaris-examples</module>
+    </modules>
     
     <properties>
         <maven.compiler.source>8</maven.compiler.source>
         <maven.compiler.target>8</maven.compiler.target>
-        <polaris.version>1.2.1</polaris.version>
+        <polaris-dependencies.version>1.2.2</polaris-dependencies.version>
     </properties>
-    
-    <dependencies>
-        <dependency>
-            <groupId>com.tencent.polaris</groupId>
-            <artifactId>polaris-factory</artifactId>
-        </dependency>
-    </dependencies>
     
     
     <dependencyManagement>
@@ -27,7 +42,7 @@
             <dependency>
                 <groupId>com.tencent.polaris</groupId>
                 <artifactId>polaris-dependencies</artifactId>
-                <version>${polaris.version}</version>
+                <version>${polaris-dependencies.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
