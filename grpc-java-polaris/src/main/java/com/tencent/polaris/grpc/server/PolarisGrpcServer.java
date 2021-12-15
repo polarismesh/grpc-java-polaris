@@ -30,6 +30,7 @@ import com.tencent.polaris.grpc.util.JvmShutdownHookUtil;
 import io.grpc.BindableService;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
+import io.grpc.ServerServiceDefinition;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -54,7 +55,7 @@ public class PolarisGrpcServer {
     
     private final int port;
     
-    private final String serviceName;
+    private final String applicationName;
     
     private final String namespace;
     
@@ -63,6 +64,8 @@ public class PolarisGrpcServer {
     private final List<BindableService> bindableServices;
     
     private final String siteLocalIp;
+    
+    private final boolean grpcServiceRegister;
     
     private final ScheduledExecutorService executorService = new ScheduledThreadPoolExecutor(1, r -> {
         Thread t = new Thread(r);
@@ -74,11 +77,12 @@ public class PolarisGrpcServer {
     private PolarisGrpcServer(Builder builder) {
         this.ttl = builder.ttl;
         this.port = builder.port;
-        this.serviceName = builder.serviceName;
+        this.applicationName = builder.applicationName;
         this.namespace = builder.namespace;
         this.metaData = builder.metaData;
         this.bindableServices = builder.bindableServices;
         this.siteLocalIp = builder.siteLocalIp;
+        this.grpcServiceRegister = builder.grpcServiceRegister;
     }
     
     public static Builder builder() {
@@ -103,14 +107,14 @@ public class PolarisGrpcServer {
             log.info("grpc server started at port : {}", port);
             
             if (!server.isShutdown() && !server.isTerminated()) {
-                this.registerInstance();
+                this.registerInstance(bindableServices);
             }
             
             Server finalServer = server;
             JvmShutdownHookUtil.addHook(() -> {
                 log.info("shutting sown grpc server sine JVM is shutting down");
                 executorService.shutdownNow();
-                deregister();
+                this.deregister(bindableServices);
                 providerAPI.destroy();
                 finalServer.shutdown();
             });
@@ -127,7 +131,7 @@ public class PolarisGrpcServer {
         
         private int port;
         
-        private String serviceName;
+        private String applicationName;
         
         private String namespace;
         
@@ -139,6 +143,8 @@ public class PolarisGrpcServer {
         
         private String siteLocalIp;
         
+        private boolean grpcServiceRegister;
+        
         private static final String DEFAULT_NAMESPACE = "default";
         
         private static final int DEFAULT_TTL = 5;
@@ -148,8 +154,8 @@ public class PolarisGrpcServer {
             return this;
         }
         
-        public Builder serviceName(String serviceName) {
-            this.serviceName = serviceName;
+        public Builder applicationName(String applicationName) {
+            this.applicationName = applicationName;
             return this;
         }
         
@@ -184,6 +190,9 @@ public class PolarisGrpcServer {
         }
         
         private void checkField() {
+            if (StringUtils.isBlank(applicationName)) {
+                this.grpcServiceRegister = true;
+            }
             if (StringUtils.isBlank(namespace)) {
                 this.namespace = DEFAULT_NAMESPACE;
             }
@@ -198,31 +207,47 @@ public class PolarisGrpcServer {
     
     
     /**
-     * Register service
+     * This interface will determine whether it is an interface-level registration instance or an application-level
+     * instance registration based on grpcServiceRegister
      */
-    private void registerInstance() {
+    private void registerInstance(List<BindableService> bindableServices) {
+        if (grpcServiceRegister) {
+            for (BindableService bindableService : bindableServices) {
+                ServerServiceDefinition serverServiceDefinition = bindableService.bindService();
+                String grpcServiceName = serverServiceDefinition.getServiceDescriptor().getName();
+                this.registerOne(grpcServiceName);
+            }
+            return;
+        }
+        this.registerOne(applicationName);
+    }
+    
+    /**
+     * Register a service instance
+     *
+     */
+    private void registerOne(String useServiceName) {
         InstanceRegisterRequest request = new InstanceRegisterRequest();
         request.setNamespace(namespace);
-        request.setService(serviceName);
+        request.setService(useServiceName);
         request.setHost(siteLocalIp);
         request.setPort(port);
         request.setTtl(ttl);
         request.setMetadata(metaData);
         InstanceRegisterResponse response = providerAPI.register(request);
         log.info("grpc server register polaris success,instanceId:{}", response.getInstanceId());
-        this.heartBeat();
+        this.heartBeat(useServiceName);
     }
-    
     
     /**
      * Report heartbeat
      */
-    private void heartBeat() {
+    private void heartBeat(String useServiceName) {
         executorService.scheduleAtFixedRate(() -> {
             log.info("Report service heartbeat");
             InstanceHeartbeatRequest request = new InstanceHeartbeatRequest();
             request.setNamespace(namespace);
-            request.setService(serviceName);
+            request.setService(useServiceName);
             request.setHost(siteLocalIp);
             request.setPort(port);
             try {
@@ -236,11 +261,27 @@ public class PolarisGrpcServer {
     /**
      * Service deregister
      */
-    private void deregister() {
+    private void deregister(List<BindableService> bindableServices) {
         log.info("Virtual machine shut down deregister service");
+        if (grpcServiceRegister) {
+            for (BindableService bindableService : bindableServices) {
+                ServerServiceDefinition serverServiceDefinition = bindableService.bindService();
+                String grpcServiceName = serverServiceDefinition.getServiceDescriptor().getName();
+                this.deregisterOne(grpcServiceName);
+            }
+            return;
+        }
+        this.deregisterOne(applicationName);
+    }
+    
+    /**
+     * deregister a service instance
+     *
+     */
+    private void deregisterOne(String useServiceName) {
         InstanceDeregisterRequest request = new InstanceDeregisterRequest();
         request.setNamespace(namespace);
-        request.setService(serviceName);
+        request.setService(useServiceName);
         request.setHost(siteLocalIp);
         request.setPort(port);
         providerAPI.deRegister(request);

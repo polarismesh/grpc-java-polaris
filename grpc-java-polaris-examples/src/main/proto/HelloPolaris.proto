@@ -13,3 +13,7 @@ message request{
 service Hello{
   rpc  sayHello(request) returns (response);
 }
+
+service Hi{
+  rpc sayHi(request) returns (response);
+}
