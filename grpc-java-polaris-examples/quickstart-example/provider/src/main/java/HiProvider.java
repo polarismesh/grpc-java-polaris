@@ -14,8 +14,6 @@
  * the License.
  */
 
-package com.tencent.polaris.grpc.server;
-
 import com.tencent.polaris.grpc.HelloPolaris;
 import com.tencent.polaris.grpc.HiGrpc;
 import io.grpc.stub.StreamObserver;
@@ -23,7 +21,7 @@ import io.grpc.stub.StreamObserver;
 /**
  * @author lixiaoshuang
  */
-public class HiImpl extends HiGrpc.HiImplBase {
+public class HiProvider extends HiGrpc.HiImplBase {
     
     @Override
     public void sayHi(HelloPolaris.request request, StreamObserver<HelloPolaris.response> responseObserver) {

@@ -14,9 +14,8 @@
  * the License.
  */
 
-package com.tencent.polaris.grpc.server;
-
 import com.google.common.collect.Lists;
+import com.tencent.polaris.grpc.server.PolarisGrpcServer;
 import io.grpc.BindableService;
 
 import java.util.List;
@@ -25,11 +24,11 @@ import java.util.List;
  * @author lixiaoshuang
  */
 public class ServerMain {
-    
+
     public static void main(String[] args) {
-        
-        List<BindableService> services = Lists.newArrayList(new HelloImpl(),new HiImpl());
-        
+
+        List<BindableService> services = Lists.newArrayList(new HelloProvider(),new HiProvider());
+
         PolarisGrpcServer polarisGrpcServer = PolarisGrpcServer.builder()
                 .port(50051)
                 .namespace("default")
@@ -39,8 +38,8 @@ public class ServerMain {
                 .siteLocalIp("")
                 .bindableServices(services)
                 .build();
-        
+
         polarisGrpcServer.start();
-        
+
     }
 }
