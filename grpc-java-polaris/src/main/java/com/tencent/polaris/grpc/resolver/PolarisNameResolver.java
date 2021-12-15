@@ -18,7 +18,6 @@ package com.tencent.polaris.grpc.resolver;
 
 import com.tencent.polaris.api.core.ConsumerAPI;
 import com.tencent.polaris.api.pojo.Instance;
-import com.tencent.polaris.api.rpc.GetAllInstancesRequest;
 import com.tencent.polaris.api.rpc.GetInstancesRequest;
 import com.tencent.polaris.api.rpc.InstancesResponse;
 import io.grpc.Attributes;
