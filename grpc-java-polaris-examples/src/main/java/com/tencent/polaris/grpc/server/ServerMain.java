@@ -33,7 +33,7 @@ public class ServerMain {
         PolarisGrpcServer polarisGrpcServer = PolarisGrpcServer.builder()
                 .port(50051)
                 .namespace("default")
-//                .serviceName("grpc-demo-java")
+                .applicationName("grpc-demo-java")
                 .metaData(null)
                 .ttl(5)
                 .siteLocalIp("")

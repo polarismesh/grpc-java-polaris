@@ -55,7 +55,7 @@ public class PolarisGrpcServer {
     
     private final int port;
     
-    private final String serviceName;
+    private final String applicationName;
     
     private final String namespace;
     
@@ -77,7 +77,7 @@ public class PolarisGrpcServer {
     private PolarisGrpcServer(Builder builder) {
         this.ttl = builder.ttl;
         this.port = builder.port;
-        this.serviceName = builder.serviceName;
+        this.applicationName = builder.applicationName;
         this.namespace = builder.namespace;
         this.metaData = builder.metaData;
         this.bindableServices = builder.bindableServices;
@@ -131,7 +131,7 @@ public class PolarisGrpcServer {
         
         private int port;
         
-        private String serviceName;
+        private String applicationName;
         
         private String namespace;
         
@@ -154,8 +154,8 @@ public class PolarisGrpcServer {
             return this;
         }
         
-        public Builder serviceName(String serviceName) {
-            this.serviceName = serviceName;
+        public Builder applicationName(String applicationName) {
+            this.applicationName = applicationName;
             return this;
         }
         
@@ -190,7 +190,7 @@ public class PolarisGrpcServer {
         }
         
         private void checkField() {
-            if (StringUtils.isBlank(serviceName)) {
+            if (StringUtils.isBlank(applicationName)) {
                 this.grpcServiceRegister = true;
             }
             if (StringUtils.isBlank(namespace)) {
@@ -219,7 +219,7 @@ public class PolarisGrpcServer {
             }
             return;
         }
-        this.registerOne(serviceName);
+        this.registerOne(applicationName);
     }
     
     /**
@@ -271,7 +271,7 @@ public class PolarisGrpcServer {
             }
             return;
         }
-        this.deregisterOne(serviceName);
+        this.deregisterOne(applicationName);
     }
     
     /**

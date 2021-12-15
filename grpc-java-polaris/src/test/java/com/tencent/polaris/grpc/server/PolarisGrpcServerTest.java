@@ -27,14 +27,14 @@ public class PolarisGrpcServerTest {
     
     @Test
     public void testBuilder() {
-        PolarisGrpcServer polarisGrpcServer = PolarisGrpcServer.builder().port(8888).serviceName("grpc-demo-java")
+        PolarisGrpcServer polarisGrpcServer = PolarisGrpcServer.builder().port(8888).applicationName("grpc-demo-java")
                 .namespace("default").build();
         assertNotNull(polarisGrpcServer);
     }
     
     @Test
     public void testStart() {
-        PolarisGrpcServer polarisGrpcServer = PolarisGrpcServer.builder().port(0).serviceName("grpc-demo-java")
+        PolarisGrpcServer polarisGrpcServer = PolarisGrpcServer.builder().port(0).applicationName("grpc-demo-java")
                 .namespace("default").build();
         
         boolean start = polarisGrpcServer.start();
