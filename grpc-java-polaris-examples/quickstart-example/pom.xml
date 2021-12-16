@@ -3,29 +3,24 @@
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
-        <artifactId>grpc-java-polaris-parent</artifactId>
+        <artifactId>grpc-java-polaris-examples</artifactId>
         <groupId>com.tencent.polaris</groupId>
         <version>1.0.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
     
-    <artifactId>grpc-java-polaris</artifactId>
+    <artifactId>quickstart-example</artifactId>
+    <packaging>pom</packaging>
     
     <properties>
         <maven.compiler.source>8</maven.compiler.source>
         <maven.compiler.target>8</maven.compiler.target>
-        <mockito-core.version>4.1.0</mockito-core.version>
     </properties>
     
-    <dependencies>
-        <dependency>
-            <groupId>com.tencent.polaris</groupId>
-            <artifactId>polaris-all</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.mockito</groupId>
-            <artifactId>mockito-core</artifactId>
-            <version>${mockito-core.version}</version>
-        </dependency>
-    </dependencies>
+    <modules>
+        <module>provider</module>
+        <module>consumer</module>
+        <module>proto</module>
+    </modules>
+
 </project>

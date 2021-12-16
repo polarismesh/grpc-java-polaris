@@ -14,22 +14,34 @@
  * the License.
  */
 
-package com.tencent.polaris.grpc.server;
+package com.tencent.polaris.grpc;
 
-import com.tencent.polaris.grpc.HelloPolaris;
-import com.tencent.polaris.grpc.HiGrpc;
-import io.grpc.stub.StreamObserver;
+import com.google.common.collect.Lists;
+import com.tencent.polaris.grpc.server.PolarisGrpcServer;
+import io.grpc.BindableService;
+
+import java.util.List;
 
 /**
  * @author lixiaoshuang
  */
-public class HiImpl extends HiGrpc.HiImplBase {
-    
-    @Override
-    public void sayHi(HelloPolaris.request request, StreamObserver<HelloPolaris.response> responseObserver) {
-        String msg = request.getMsg();
-        HelloPolaris.response response = HelloPolaris.response.newBuilder().setData(msg).build();
-        responseObserver.onNext(response);
-        responseObserver.onCompleted();
+public class ServerMain {
+
+    public static void main(String[] args) {
+
+        List<BindableService> services = Lists.newArrayList(new HelloProvider(),new HiProvider());
+
+        PolarisGrpcServer polarisGrpcServer = PolarisGrpcServer.builder()
+                .port(50051)
+                .namespace("default")
+                .applicationName("grpc-demo-java")
+                .metaData(null)
+                .ttl(5)
+                .siteLocalIp("")
+                .bindableServices(services)
+                .build();
+
+        polarisGrpcServer.start();
+
     }
 }

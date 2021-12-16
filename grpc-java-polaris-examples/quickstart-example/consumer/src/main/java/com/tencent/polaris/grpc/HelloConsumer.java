@@ -14,10 +14,8 @@
  * the License.
  */
 
-package com.tencent.polaris.grpc.client;
+package com.tencent.polaris.grpc;
 
-import com.tencent.polaris.grpc.HelloGrpc;
-import com.tencent.polaris.grpc.HelloPolaris;
 import com.tencent.polaris.grpc.resolver.PolarisNameResolverProvider;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
@@ -28,7 +26,7 @@ import lombok.extern.slf4j.Slf4j;
  * @author lixiaoshuang
  */
 @Slf4j
-public class HelloClient {
+public class HelloConsumer {
     
     public static void main(String[] args) {
         NameResolverRegistry.getDefaultRegistry().register(new PolarisNameResolverProvider());
@@ -38,6 +36,7 @@ public class HelloClient {
         HelloGrpc.HelloBlockingStub helloBlockingStub = HelloGrpc.newBlockingStub(channel);
         HelloPolaris.request request = HelloPolaris.request.newBuilder().setMsg("hello polaris").build();
         HelloPolaris.response response = helloBlockingStub.sayHello(request);
-        log.info("response:{}", response.getData());
+        System.out.println("grpc server response ---------> :" + response.getData());
+        System.exit(1);
     }
 }
