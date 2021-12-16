@@ -38,9 +38,6 @@
                         </goals>
                         <configuration>
                             <transformers>
-                                <transformer
-                                    implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
-                                </transformer>
                                 <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
                                 <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                                     <mainClass>com.tencent.polaris.grpc.HelloConsumer</mainClass>
