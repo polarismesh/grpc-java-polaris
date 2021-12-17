@@ -131,9 +131,6 @@ public final class PolarisGrpcServerBuilder extends ServerBuilder<PolarisGrpcSer
         if (ttl == 0) {
             this.ttl = DEFAULT_TTL;
         }
-        if (StringUtils.isBlank(host)) {
-            this.host = IpUtil.getLocalHostExactAddress();
-        }
     }
 
     public String getApplicationName() {

@@ -22,7 +22,9 @@ import com.tencent.polaris.api.rpc.InstanceDeregisterRequest;
 import com.tencent.polaris.api.rpc.InstanceHeartbeatRequest;
 import com.tencent.polaris.api.rpc.InstanceRegisterRequest;
 import com.tencent.polaris.api.rpc.InstanceRegisterResponse;
+import com.tencent.polaris.client.api.SDKContext;
 import com.tencent.polaris.factory.api.DiscoveryAPIFactory;
+import com.tencent.polaris.grpc.util.IpUtil;
 import io.grpc.Server;
 import io.grpc.ServerServiceDefinition;
 import java.io.IOException;
@@ -43,13 +45,17 @@ public class PolarisGrpcServer extends Server {
 
     private final Logger log = LoggerFactory.getLogger(PolarisGrpcServer.class);
 
-    private final ProviderAPI providerAPI = DiscoveryAPIFactory.createProviderAPI();
+    private final SDKContext context = SDKContext.initContext();
+
+    private final ProviderAPI providerAPI = DiscoveryAPIFactory.createProviderAPIByContext(context);
 
     private final PolarisGrpcServerBuilder builder;
 
     private Server targetServer;
 
     private final AtomicBoolean shutdownOnce = new AtomicBoolean(false);
+
+    private String host;
 
     private final ScheduledExecutorService executorService = new ScheduledThreadPoolExecutor(1, r -> {
         Thread t = new Thread(r);
@@ -64,6 +70,7 @@ public class PolarisGrpcServer extends Server {
 
     @Override
     public Server start() throws IOException {
+        initLocalHost();
         targetServer = targetServer.start();
         this.registerInstance(targetServer.getServices());
         return this;
@@ -109,6 +116,16 @@ public class PolarisGrpcServer extends Server {
         this.targetServer.awaitTermination();
     }
 
+    private void initLocalHost() {
+        host = builder.getHost();
+        if (StringUtils.isNoneBlank(host)) {
+            return;
+        }
+        String polarisServerAddr = context.getConfig().getGlobal().getServerConnector().getAddresses().get(0);
+        String[] detail = StringUtils.split(polarisServerAddr, ":");
+        host = IpUtil.getLocalHost(detail[0], Integer.parseInt(detail[1]));
+    }
+
     /**
      * This interface will determine whether it is an interface-level registration instance or an application-level
      * instance registration based on grpcServiceRegister
@@ -131,7 +148,7 @@ public class PolarisGrpcServer extends Server {
         InstanceRegisterRequest request = new InstanceRegisterRequest();
         request.setNamespace(builder.getNamespace());
         request.setService(serviceName);
-        request.setHost(builder.getHost());
+        request.setHost(host);
         request.setPort(targetServer.getPort());
         request.setTtl(builder.getTtl());
         request.setMetadata(builder.getMetaData());
@@ -147,7 +164,6 @@ public class PolarisGrpcServer extends Server {
         final int ttl = builder.getTtl();
         final int port = targetServer.getPort();
         final String namespace = builder.getNamespace();
-        final String host = builder.getHost();
         executorService.scheduleAtFixedRate(() -> {
             log.info("Report service heartbeat");
             InstanceHeartbeatRequest request = new InstanceHeartbeatRequest();
@@ -185,7 +201,7 @@ public class PolarisGrpcServer extends Server {
         InstanceDeregisterRequest request = new InstanceDeregisterRequest();
         request.setNamespace(builder.getNamespace());
         request.setService(serviceName);
-        request.setHost(builder.getHost());
+        request.setHost(host);
         request.setPort(targetServer.getPort());
         providerAPI.deRegister(request);
     }

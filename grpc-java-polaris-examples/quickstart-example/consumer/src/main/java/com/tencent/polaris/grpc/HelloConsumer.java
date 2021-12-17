@@ -32,7 +32,7 @@ public class HelloConsumer {
     
     public HelloConsumer() {
         NameResolverRegistry.getDefaultRegistry().register(new PolarisNameResolverProvider());
-        channel = ManagedChannelBuilder.forTarget("polaris://grpc-demo-java").usePlaintext()
+        channel = ManagedChannelBuilder.forTarget("polaris://EchoServerGRPCJava").usePlaintext()
                 .build();
     }
     
