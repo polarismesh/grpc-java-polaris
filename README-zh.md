@@ -1,10 +1,10 @@
-# grpc-java-polaris
+# gRPC-Java-Polaris
 
 [English](./README.md) | 简体中文
 
 ## 介绍
 
-grpc-java-polaris 是基于 Grpc 扩展的服务治理组件，方便使用 Grpc 的开发者快速接入 polaris，并使用 polaris 提供的服务注册、负载均衡、熔断、限流等功能。
+gRPC-Java-Polaris 是基于 Grpc 扩展的服务治理组件，方便使用 Grpc 的开发者快速接入 polaris，并使用 polaris 提供的服务注册、负载均衡、熔断、限流等功能。
 
 ## 目录介绍
 
