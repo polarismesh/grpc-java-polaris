@@ -45,7 +45,7 @@ public class PolarisNameResolverProviderTest {
     
     @Test
     public void testNewNameResolver() throws URISyntaxException {
-        URI uri = new URI("polaris://grpc-demo-java?namespace=default");
+        URI uri = new URI("polaris://grpc-demo-java");
         NameResolver.Args args = NameResolver.Args.newBuilder().setDefaultPort(8888)
                 .setServiceConfigParser(new NameResolver.ServiceConfigParser() {
                     @Override
