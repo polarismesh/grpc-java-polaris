@@ -5,12 +5,16 @@
     <parent>
         <artifactId>quickstart-example</artifactId>
         <groupId>com.tencent.polaris</groupId>
-        <version>1.0.0-SNAPSHOT</version>
+        <version>${revision}</version>
+        <relativePath>../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
     
     <artifactId>quickstart-proto</artifactId>
-    
+
+    <name>gRPC Java Polaris QuickStart Example Proto</name>
+    <description>gRPC Java Polaris QuickStart Example Proto POM</description>
+
     <properties>
         <maven.compiler.source>8</maven.compiler.source>
         <maven.compiler.target>8</maven.compiler.target>

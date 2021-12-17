@@ -1,10 +1,10 @@
-# grpc-java-polaris
+# gRPC-Java-Polaris
 
 English | [简体中文](./README-zh.md)
 
 ## Introduction
 
-grpc-java-polaris is a service management component based on the Grpc extension, which is convenient for developers who use Grpc to quickly access polaris and use the functions of service registration, load balancing, fusing, and current limiting provided by polaris.
+gRPC-Java-Polaris is a service management component based on the Grpc extension, which is convenient for developers who use Grpc to quickly access polaris and use the functions of service registration, load balancing, fusing, and current limiting provided by polaris.
 
 ## Catalog Introduction
 
