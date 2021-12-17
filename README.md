@@ -60,4 +60,4 @@ ManagedChannel channel = ManagedChannelBuilder.forTarget("polaris://grpc-demo-ja
 
 ### Examples
 
-- [QuickStart](./grpc-java-polaris-example)
+- [QuickStart](./grpc-java-polaris-examples/quickstart-example)
