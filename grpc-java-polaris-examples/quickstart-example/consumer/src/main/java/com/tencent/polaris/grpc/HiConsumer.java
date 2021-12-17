@@ -31,7 +31,7 @@ public class HiConsumer {
     public static void main(String[] args) {
         
         NameResolverRegistry.getDefaultRegistry().register(new PolarisNameResolverProvider());
-        ManagedChannel channel = ManagedChannelBuilder.forTarget("polaris://Hi:8080?namespace=default").usePlaintext()
+        ManagedChannel channel = ManagedChannelBuilder.forTarget("polaris://Hi?namespace=default").usePlaintext()
                 .build();
         
         HiGrpc.HiBlockingStub hiBlockingStub = HiGrpc.newBlockingStub(channel);
