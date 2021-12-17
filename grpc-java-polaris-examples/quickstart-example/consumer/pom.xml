@@ -5,12 +5,15 @@
     <parent>
         <artifactId>quickstart-example</artifactId>
         <groupId>com.tencent.polaris</groupId>
-        <version>1.0.0-SNAPSHOT</version>
+        <version>${revision}</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
     
     <artifactId>quickstart-consumer</artifactId>
+    <name>gRPC Java Polaris QuickStart Example Consumer</name>
+    <description>gRPC Java Polaris QuickStart Example Consumer POM</description>
+
     <dependencies>
         <dependency>
             <groupId>com.tencent.polaris</groupId>
@@ -47,10 +50,15 @@
                                 <filter>
                                     <artifact>*:*</artifact>
                                     <excludes>
+                                        <exclude>module-info.class</exclude>
                                         <exclude>META-INF/NOTICE.txt</exclude>
+                                        <exclude>META-INF/LICENSE</exclude>
+                                        <exclude>META-INF/NOTICE</exclude>
+                                        <exclude>META-INF/DEPENDENCIES</exclude>
                                         <exclude>META-INF/*.SF</exclude>
                                         <exclude>META-INF/*.DSA</exclude>
                                         <exclude>META-INF/*.RSA</exclude>
+                                        <exclude>META-INF/*.MF</exclude>
                                     </excludes>
                                 </filter>
                             </filters>
