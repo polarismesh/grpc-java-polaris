@@ -16,6 +16,9 @@
 
 package com.tencent.polaris.grpc.util;
 
+import java.io.IOException;
+import java.net.Socket;
+import java.net.UnknownHostException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,9 +32,19 @@ import java.util.Enumeration;
  */
 public class IpUtil {
     
-    private static final Logger log = LoggerFactory.getLogger(IpUtil.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(IpUtil.class);
     
     private static final String LOCALHOST_VALUE = "127.0.0.1";
+
+    public static String getLocalHost(String host, int port) {
+        try (Socket socket = new Socket(host, port)) {
+            InetAddress address = socket.getLocalAddress();
+            return address.getHostAddress();
+        } catch (IOException ex) {
+            LOGGER.error("getLocalHost through socket fail : {}", ex.getMessage());
+            return getLocalHostExactAddress();
+        }
+    }
     
     /**
      * Get real local ip
@@ -57,7 +70,7 @@ public class IpUtil {
             }
             return getLocalHost();
         } catch (Exception e) {
-            log.error("getLocalHostExactAddress error", e);
+            LOGGER.error("getLocalHostExactAddress error", e);
         }
         return null;
     }
@@ -72,7 +85,7 @@ public class IpUtil {
         try {
             inetAddress = InetAddress.getLocalHost();
         } catch (Throwable e) {
-            log.error(e.getMessage());
+            LOGGER.error(e.getMessage());
         }
         if (inetAddress == null) {
             return LOCALHOST_VALUE;

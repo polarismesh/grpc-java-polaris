@@ -16,11 +16,10 @@
 
 package com.tencent.polaris.grpc;
 
-import com.google.common.collect.Lists;
-import com.tencent.polaris.grpc.server.PolarisGrpcServer;
-import io.grpc.BindableService;
+import com.tencent.polaris.grpc.server.PolarisGrpcServerBuilder;
 
-import java.util.List;
+import io.grpc.Server;
+import java.io.IOException;
 
 /**
  * @author lixiaoshuang
@@ -28,20 +27,22 @@ import java.util.List;
 public class ServerMain {
 
     public static void main(String[] args) {
-
-        List<BindableService> services = Lists.newArrayList(new HelloProvider(),new HiProvider());
-
-        PolarisGrpcServer polarisGrpcServer = PolarisGrpcServer.builder()
-                .port(50051)
+        Server polarisGrpcServer = PolarisGrpcServerBuilder
+                .forPort(50051)
+                //.host("127.0.0.1")
                 .namespace("default")
-                .applicationName("grpc-demo-java")
+                .applicationName("EchoServerGRPCJava")
                 .metaData(null)
                 .ttl(5)
-                .siteLocalIp("")
-                .bindableServices(services)
+                .addService(new HelloProvider())
+                .addService(new HiProvider())
                 .build();
 
-        polarisGrpcServer.start();
+        try {
+            polarisGrpcServer.start();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
     }
 }
