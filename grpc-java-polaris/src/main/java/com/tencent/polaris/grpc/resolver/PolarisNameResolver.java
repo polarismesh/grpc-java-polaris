@@ -48,10 +48,12 @@ public class PolarisNameResolver extends NameResolver {
     
     private final String service;
     
+    private static final String DEFAULT_NAMESPACE = "default";
+    
     
     public PolarisNameResolver(URI targetUri, ConsumerAPI consumerAPI) {
         this.service = targetUri.getHost();
-        this.namespace = targetUri.getQuery().split("=")[1];
+        this.namespace = targetUri.getQuery() == null ? DEFAULT_NAMESPACE : targetUri.getQuery().split("=")[1];
         this.consumerAPI = consumerAPI;
     }
     
