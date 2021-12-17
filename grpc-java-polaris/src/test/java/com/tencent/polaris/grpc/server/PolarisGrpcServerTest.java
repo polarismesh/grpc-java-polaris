@@ -16,6 +16,7 @@
 
 package com.tencent.polaris.grpc.server;
 
+import io.grpc.Server;
 import org.junit.Test;
 
 import static org.junit.Assert.*;
@@ -27,17 +28,8 @@ public class PolarisGrpcServerTest {
     
     @Test
     public void testBuilder() {
-        PolarisGrpcServer polarisGrpcServer = PolarisGrpcServer.builder().port(8888).applicationName("grpc-demo-java")
+        Server polarisGrpcServer =  PolarisGrpcServerBuilder.forPort(8888).applicationName("grpc-demo-java")
                 .namespace("default").build();
         assertNotNull(polarisGrpcServer);
-    }
-    
-    @Test
-    public void testStart() {
-        PolarisGrpcServer polarisGrpcServer = PolarisGrpcServer.builder().port(0).applicationName("grpc-demo-java")
-                .namespace("default").build();
-        
-        boolean start = polarisGrpcServer.start();
-        assertFalse(start);
     }
 }
