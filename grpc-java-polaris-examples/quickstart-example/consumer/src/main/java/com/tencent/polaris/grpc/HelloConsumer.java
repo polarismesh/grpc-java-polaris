@@ -28,15 +28,19 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class HelloConsumer {
     
-    public static void main(String[] args) {
+    private ManagedChannel channel;
+    
+    public HelloConsumer() {
         NameResolverRegistry.getDefaultRegistry().register(new PolarisNameResolverProvider());
-        ManagedChannel channel = ManagedChannelBuilder.forTarget("polaris://grpc-demo-java:8080?namespace=default")
-                .usePlaintext().build();
-        
+        channel = ManagedChannelBuilder.forTarget("polaris://grpc-demo-java:8080?namespace=default").usePlaintext()
+                .build();
+    }
+    
+    public String hello(String value) {
         HelloGrpc.HelloBlockingStub helloBlockingStub = HelloGrpc.newBlockingStub(channel);
-        HelloPolaris.request request = HelloPolaris.request.newBuilder().setMsg("hello polaris").build();
+        HelloPolaris.request request = HelloPolaris.request.newBuilder().setMsg(value).build();
         HelloPolaris.response response = helloBlockingStub.sayHello(request);
         System.out.println("grpc server response ---------> :" + response.getData());
-        System.exit(1);
+        return response.getData();
     }
 }
