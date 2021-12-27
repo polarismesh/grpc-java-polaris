@@ -51,36 +51,77 @@ public final class PolarisGrpcServerBuilder extends ServerBuilder<PolarisGrpcSer
     private static final int DEFAULT_TTL = 5;
 
     private final ServerBuilder<?> builder;
-
+    
+    /**
+     * Static factory for creating a new PolarisGrpcServerBuilder.
+     *
+     * @param port the port to listen on
+     * @return PolarisGrpcServerBuilder
+     */
     public static PolarisGrpcServerBuilder forPort(int port) {
         ServerBuilder<?> builder = ServerBuilder.forPort(port);
         return new PolarisGrpcServerBuilder(builder);
     }
-
+    
+    /**
+     * PolarisGrpcServerBuilder Constructor.
+     *
+     * @param builder ServerBuilder
+     */
     public PolarisGrpcServerBuilder(ServerBuilder<?> builder) {
         this.builder = builder;
     }
-
+    
+    /**
+     * Set grpc service name.
+     *
+     * @param applicationName grpc server name
+     * @return PolarisGrpcServerBuilder
+     */
     public PolarisGrpcServerBuilder applicationName(String applicationName) {
         this.applicationName = applicationName;
         return this;
     }
-
+    
+    /**
+     * Namespace registered by grpc service
+     *
+     * @param namespace polaris namespace
+     * @return PolarisGrpcServerBuilder
+     */
     public PolarisGrpcServerBuilder namespace(String namespace) {
         this.namespace = namespace;
         return this;
     }
-
+    
+    /**
+     * Set metadata.
+     *
+     * @param metadata metadata
+     * @return PolarisGrpcServerBuilder
+     */
     public PolarisGrpcServerBuilder metaData(Map<String, String> metadata) {
         this.metaData = metadata;
         return this;
     }
-
+    
+    /**
+     * Set the heartbeat report time by default 5 seconds.
+     *
+     * @param ttl Time in seconds
+     * @return PolarisGrpcServerBuilder
+     */
     public PolarisGrpcServerBuilder ttl(int ttl) {
         this.ttl = ttl;
         return this;
     }
-
+    
+    /**
+     * Set the local host
+     *
+     * @param host host
+     * @return PolarisGrpcServerBuilder
+     */
     public PolarisGrpcServerBuilder host(String host) {
         this.host = host;
         return this;

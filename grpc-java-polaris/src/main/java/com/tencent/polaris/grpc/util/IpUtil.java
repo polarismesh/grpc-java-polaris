@@ -18,7 +18,7 @@ package com.tencent.polaris.grpc.util;
 
 import java.io.IOException;
 import java.net.Socket;
-import java.net.UnknownHostException;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,7 +35,14 @@ public class IpUtil {
     private static final Logger LOGGER = LoggerFactory.getLogger(IpUtil.class);
     
     private static final String LOCALHOST_VALUE = "127.0.0.1";
-
+    
+    /**
+     * Gets the local address to which the socket is bound.
+     *
+     * @param host polaris server host
+     * @param port polaris server port
+     * @return local ip
+     */
     public static String getLocalHost(String host, int port) {
         try (Socket socket = new Socket(host, port)) {
             InetAddress address = socket.getLocalAddress();
