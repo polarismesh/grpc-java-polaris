@@ -84,7 +84,7 @@ public final class PolarisGrpcServerBuilder extends ServerBuilder<PolarisGrpcSer
     }
     
     /**
-     * Namespace registered by grpc service
+     * Namespace registered by grpc service.
      *
      * @param namespace polaris namespace
      * @return PolarisGrpcServerBuilder
@@ -117,7 +117,7 @@ public final class PolarisGrpcServerBuilder extends ServerBuilder<PolarisGrpcSer
     }
     
     /**
-     * Set the local host
+     * Set the local host.
      *
      * @param host host
      * @return PolarisGrpcServerBuilder

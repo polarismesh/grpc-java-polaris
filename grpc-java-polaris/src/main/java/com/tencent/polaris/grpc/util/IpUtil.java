@@ -54,10 +54,10 @@ public class IpUtil {
     }
     
     /**
-     * Get real local ip
+     * Get real local ip.
      * <p>
      * You can use getNetworkInterfaces()+getInetAddresses() to get all the IP addresses of the node, and then judge to
-     * find out the site-local address, this is a recommended solution
+     * find out the site-local address, this is a recommended solution.
      *
      * @return real ip
      */
@@ -83,7 +83,7 @@ public class IpUtil {
     }
     
     /**
-     * Get local ip
+     * Get local ip.
      * <p>
      * There are environmental restrictions. Different environments may get different ips.
      */

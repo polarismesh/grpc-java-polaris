@@ -22,7 +22,7 @@ package com.tencent.polaris.grpc.util;
 public class JvmShutdownHookUtil {
     
     /**
-     * Add JVM callback hooks
+     * Add JVM callback hooks.
      *
      * @param runnable Functional interface
      */

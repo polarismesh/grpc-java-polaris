@@ -49,13 +49,13 @@ public class PolarisNameResolverProvider extends NameResolverProvider {
     public PolarisNameResolverProvider() {
         JvmShutdownHookUtil.addHook(consumerAPI::destroy);
     }
-    
+
     /**
-     * Create service discovery class
+     * Creates a NameResolver for the given target URI.
      *
-     * @param targetUri
-     * @param args
-     * @return
+     * @param targetUri the target URI to be resolved, whose scheme must not be null
+     * @param args      other information that may be useful
+     * @return NameResolver
      */
     @Override
     public NameResolver newNameResolver(URI targetUri, NameResolver.Args args) {
@@ -69,9 +69,9 @@ public class PolarisNameResolverProvider extends NameResolverProvider {
     }
     
     /**
-     * service is available
+     * service is available.
      *
-     * @return
+     * @return isAvailable
      */
     @Override
     protected boolean isAvailable() {
@@ -79,9 +79,9 @@ public class PolarisNameResolverProvider extends NameResolverProvider {
     }
     
     /**
-     * Default priority 5
+     * Default priority 5.
      *
-     * @return
+     * @return priority
      */
     @Override
     protected int priority() {
