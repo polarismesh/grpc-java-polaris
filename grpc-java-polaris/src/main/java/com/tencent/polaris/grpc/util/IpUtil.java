@@ -18,7 +18,7 @@ package com.tencent.polaris.grpc.util;
 
 import java.io.IOException;
 import java.net.Socket;
-import java.net.UnknownHostException;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,7 +35,14 @@ public class IpUtil {
     private static final Logger LOGGER = LoggerFactory.getLogger(IpUtil.class);
     
     private static final String LOCALHOST_VALUE = "127.0.0.1";
-
+    
+    /**
+     * Gets the local address to which the socket is bound.
+     *
+     * @param host polaris server host
+     * @param port polaris server port
+     * @return local ip
+     */
     public static String getLocalHost(String host, int port) {
         try (Socket socket = new Socket(host, port)) {
             InetAddress address = socket.getLocalAddress();
@@ -47,10 +54,10 @@ public class IpUtil {
     }
     
     /**
-     * Get real local ip
+     * Get real local ip.
      * <p>
      * You can use getNetworkInterfaces()+getInetAddresses() to get all the IP addresses of the node, and then judge to
-     * find out the site-local address, this is a recommended solution
+     * find out the site-local address, this is a recommended solution.
      *
      * @return real ip
      */
@@ -76,7 +83,7 @@ public class IpUtil {
     }
     
     /**
-     * Get local ip
+     * Get local ip.
      * <p>
      * There are environmental restrictions. Different environments may get different ips.
      */

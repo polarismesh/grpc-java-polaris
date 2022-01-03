@@ -22,9 +22,9 @@ package com.tencent.polaris.grpc.util;
 public class JvmShutdownHookUtil {
     
     /**
-     * Add JVM callback hooks
+     * Add JVM callback hooks.
      *
-     * @param runnable
+     * @param runnable Functional interface
      */
     public static boolean addHook(Runnable runnable) {
         Runtime.getRuntime().addShutdownHook(new Thread(runnable));

@@ -128,7 +128,7 @@ public class PolarisGrpcServer extends Server {
 
     /**
      * This interface will determine whether it is an interface-level registration instance or an application-level
-     * instance registration based on grpcServiceRegister
+     * instance registration based on grpcServiceRegister.
      */
     private void registerInstance(List<ServerServiceDefinition> definitions) {
         if (StringUtils.isNoneBlank(builder.getApplicationName())) {
@@ -142,7 +142,9 @@ public class PolarisGrpcServer extends Server {
     }
 
     /**
-     * Register a service instance
+     * Register a service instance.
+     *
+     * @param serviceName service name
      */
     private void registerOne(String serviceName) {
         InstanceRegisterRequest request = new InstanceRegisterRequest();
@@ -158,7 +160,9 @@ public class PolarisGrpcServer extends Server {
     }
 
     /**
-     * Report heartbeat
+     * Report heartbeat.
+     *
+     * @param serviceName service name
      */
     private void heartBeat(String serviceName) {
         final int ttl = builder.getTtl();
@@ -180,7 +184,9 @@ public class PolarisGrpcServer extends Server {
     }
 
     /**
-     * Service deregister
+     * Service deregister.
+     *
+     * @param definitions Definition of a service
      */
     private void deregister(List<ServerServiceDefinition> definitions) {
         log.info("Virtual machine shut down deregister service");
@@ -195,7 +201,9 @@ public class PolarisGrpcServer extends Server {
     }
 
     /**
-     * deregister a service instance
+     * deregister a service instance.
+     *
+     * @param serviceName service name
      */
     private void deregisterOne(String serviceName) {
         InstanceDeregisterRequest request = new InstanceDeregisterRequest();
