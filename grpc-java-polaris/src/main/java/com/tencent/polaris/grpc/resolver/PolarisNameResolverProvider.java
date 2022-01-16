@@ -59,13 +59,16 @@ public class PolarisNameResolverProvider extends NameResolverProvider {
      */
     @Override
     public NameResolver newNameResolver(URI targetUri, NameResolver.Args args) {
-        Pattern pattern = Pattern.compile(PATTERN);
-        Matcher matcher = pattern.matcher(targetUri.toString());
-        if (!matcher.matches()) {
-            log.error("target format is wrong,reference: polaris://[serviceName]");
-            return null;
+        if (DEFAULT_SCHEME.equals(targetUri.getScheme())) {
+            Pattern pattern = Pattern.compile(PATTERN);
+            Matcher matcher = pattern.matcher(targetUri.toString());
+            if (!matcher.matches()) {
+                log.error("target format is wrong,reference: polaris://[serviceName]");
+                return null;
+            }
+            return new PolarisNameResolver(targetUri, consumerAPI);
         }
-        return new PolarisNameResolver(targetUri, consumerAPI);
+        return null;
     }
     
     /**
