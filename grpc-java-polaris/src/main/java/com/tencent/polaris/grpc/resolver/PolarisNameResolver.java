@@ -69,6 +69,14 @@ public class PolarisNameResolver extends NameResolver {
         request.setService(service);
         InstancesResponse response = consumerAPI.getInstances(request);
         log.debug("getInstances response:{}", response);
+        notifyListener(listener, response);
+    }
+
+    private void doWatch(Listener listener) {
+
+    }
+
+    private void notifyListener(Listener listener, InstancesResponse response) {
         List<EquivalentAddressGroup> equivalentAddressGroups = null;
         if (Objects.nonNull(response)) {
             equivalentAddressGroups = Arrays.stream(response.getInstances()).filter(Instance::isHealthy)

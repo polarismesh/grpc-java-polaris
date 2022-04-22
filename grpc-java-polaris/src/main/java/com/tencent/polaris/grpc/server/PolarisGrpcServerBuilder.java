@@ -18,15 +18,19 @@ package com.tencent.polaris.grpc.server;
 
 import com.google.common.util.concurrent.MoreExecutors;
 import com.tencent.polaris.api.utils.StringUtils;
+import com.tencent.polaris.client.api.SDKContext;
 import io.grpc.BindableService;
 import io.grpc.CompressorRegistry;
 import io.grpc.DecompressorRegistry;
 import io.grpc.HandlerRegistry;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
+import io.grpc.ServerInterceptor;
 import io.grpc.ServerServiceDefinition;
 import java.io.File;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executor;
 import javax.annotation.Nullable;
@@ -51,7 +55,13 @@ public final class PolarisGrpcServerBuilder extends ServerBuilder<PolarisGrpcSer
     private static final int DEFAULT_TTL = 5;
 
     private final ServerBuilder<?> builder;
-    
+
+    private final List<PolarisServerInterceptor> polarisInterceptors = new ArrayList<>();
+
+    private final List<ServerInterceptor> interceptors = new ArrayList<>();
+
+    private final SDKContext context = SDKContext.initContext();
+
     /**
      * Static factory for creating a new PolarisGrpcServerBuilder.
      *
@@ -175,8 +185,26 @@ public final class PolarisGrpcServerBuilder extends ServerBuilder<PolarisGrpcSer
     }
 
     @Override
+    public PolarisGrpcServerBuilder intercept(ServerInterceptor interceptor) {
+        if (interceptor instanceof PolarisServerInterceptor) {
+            this.polarisInterceptors.add((PolarisServerInterceptor) interceptor);
+        } else {
+            this.interceptors.add(interceptor);
+        }
+        return this;
+    }
+
+    @Override
     public Server build() {
         checkField();
+        for (PolarisServerInterceptor interceptor : polarisInterceptors) {
+            interceptor.init(namespace, applicationName, context);
+            super.intercept(interceptor);
+        }
+        for (ServerInterceptor interceptor : interceptors) {
+            super.intercept(interceptor);
+        }
+
         return new PolarisGrpcServer(this, this.builder.build());
     }
 
@@ -209,7 +237,8 @@ public final class PolarisGrpcServerBuilder extends ServerBuilder<PolarisGrpcSer
         return host;
     }
 
-    public ServerBuilder<?> getBuilder() {
-        return builder;
+    SDKContext getContext() {
+        return context;
     }
+
 }

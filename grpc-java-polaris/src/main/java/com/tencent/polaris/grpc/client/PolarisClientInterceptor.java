@@ -14,22 +14,22 @@
  * the License.
  */
 
-package com.tencent.polaris.grpc.util;
+package com.tencent.polaris.grpc.client;
 
-import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import com.tencent.polaris.client.api.SDKContext;
+import io.grpc.ClientInterceptor;
 
 /**
- * @author lixiaoshuang
+ * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public class JvmShutdownHookUtilTest {
-    
-    @Test
-    public void testAddHook() {
-        boolean result = JvmShutdownHookUtil.addHook(() -> {
-        });
-        
-        assertTrue(result);
-    }
+public abstract class PolarisClientInterceptor implements ClientInterceptor {
+
+    /**
+     *
+     * @param namespace
+     * @param applicationName
+     * @param context
+     */
+    protected abstract void init(final String namespace, final String applicationName, final SDKContext context);
+
 }

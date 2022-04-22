@@ -17,16 +17,17 @@
 package com.tencent.polaris.grpc.resolver;
 
 import com.tencent.polaris.api.core.ConsumerAPI;
+import com.tencent.polaris.client.api.SDKContext;
 import com.tencent.polaris.factory.api.DiscoveryAPIFactory;
 import com.tencent.polaris.grpc.util.JvmShutdownHookUtil;
 import io.grpc.NameResolver;
 import io.grpc.NameResolverProvider;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.net.URI;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Service provider class
@@ -40,13 +41,13 @@ public class PolarisNameResolverProvider extends NameResolverProvider {
     private static final int DEFAULT_PRIORITY = 5;
     
     private static final String DEFAULT_SCHEME = "polaris";
-    
+
     private static final String PATTERN = "polaris://[a-zA-Z0-9_:.-]{1,128}";
     
-    private final ConsumerAPI consumerAPI = DiscoveryAPIFactory.createConsumerAPI();
-    
-    
-    public PolarisNameResolverProvider() {
+    private final ConsumerAPI consumerAPI;
+
+    public PolarisNameResolverProvider(final SDKContext context) {
+        this.consumerAPI = DiscoveryAPIFactory.createConsumerAPIByContext(context);
         JvmShutdownHookUtil.addHook(consumerAPI::destroy);
     }
 

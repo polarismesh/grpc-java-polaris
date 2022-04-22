@@ -22,6 +22,7 @@ import com.tencent.polaris.api.rpc.InstanceDeregisterRequest;
 import com.tencent.polaris.api.rpc.InstanceHeartbeatRequest;
 import com.tencent.polaris.api.rpc.InstanceRegisterRequest;
 import com.tencent.polaris.api.rpc.InstanceRegisterResponse;
+import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.client.api.SDKContext;
 import com.tencent.polaris.factory.api.DiscoveryAPIFactory;
 import com.tencent.polaris.grpc.util.IpUtil;
@@ -33,7 +34,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,9 +45,9 @@ public class PolarisGrpcServer extends Server {
 
     private final Logger log = LoggerFactory.getLogger(PolarisGrpcServer.class);
 
-    private final SDKContext context = SDKContext.initContext();
+    private final SDKContext context;
 
-    private final ProviderAPI providerAPI = DiscoveryAPIFactory.createProviderAPIByContext(context);
+    private final ProviderAPI providerAPI;
 
     private final PolarisGrpcServerBuilder builder;
 
@@ -66,6 +66,8 @@ public class PolarisGrpcServer extends Server {
     PolarisGrpcServer(PolarisGrpcServerBuilder builder, Server server) {
         this.builder = builder;
         this.targetServer = server;
+        this.context = builder.getContext();
+        this.providerAPI = DiscoveryAPIFactory.createProviderAPIByContext(context);
     }
 
     @Override
@@ -118,11 +120,11 @@ public class PolarisGrpcServer extends Server {
 
     private void initLocalHost() {
         host = builder.getHost();
-        if (StringUtils.isNoneBlank(host)) {
+        if (StringUtils.isNotBlank(host)) {
             return;
         }
         String polarisServerAddr = context.getConfig().getGlobal().getServerConnector().getAddresses().get(0);
-        String[] detail = StringUtils.split(polarisServerAddr, ":");
+        String[] detail = polarisServerAddr.split(":");
         host = IpUtil.getLocalHost(detail[0], Integer.parseInt(detail[1]));
     }
 
@@ -131,7 +133,7 @@ public class PolarisGrpcServer extends Server {
      * instance registration based on grpcServiceRegister.
      */
     private void registerInstance(List<ServerServiceDefinition> definitions) {
-        if (StringUtils.isNoneBlank(builder.getApplicationName())) {
+        if (StringUtils.isNotBlank(builder.getApplicationName())) {
             this.registerOne(builder.getApplicationName());
             return;
         }
@@ -190,7 +192,7 @@ public class PolarisGrpcServer extends Server {
      */
     private void deregister(List<ServerServiceDefinition> definitions) {
         log.info("Virtual machine shut down deregister service");
-        if (StringUtils.isNoneBlank(builder.getApplicationName())) {
+        if (StringUtils.isNotBlank(builder.getApplicationName())) {
             this.deregisterOne(builder.getApplicationName());
             return;
         }
