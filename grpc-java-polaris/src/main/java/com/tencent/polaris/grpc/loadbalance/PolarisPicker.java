@@ -17,30 +17,60 @@
 package com.tencent.polaris.grpc.loadbalance;
 
 import com.google.common.base.Preconditions;
+import com.tencent.polaris.api.pojo.DefaultServiceInstances;
+import com.tencent.polaris.api.pojo.Instance;
+import com.tencent.polaris.api.rpc.Criteria;
+import com.tencent.polaris.grpc.util.Common;
+import com.tencent.polaris.router.api.core.RouterAPI;
+import com.tencent.polaris.router.api.rpc.ProcessLoadBalanceRequest;
+import com.tencent.polaris.router.api.rpc.ProcessLoadBalanceResponse;
 import io.grpc.LoadBalancer.PickResult;
 import io.grpc.LoadBalancer.PickSubchannelArgs;
+import io.grpc.LoadBalancer.Subchannel;
 import io.grpc.LoadBalancer.SubchannelPicker;
 import io.grpc.Status;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public class PolarisPicker extends SubchannelPicker {
 
-    PolarisLoadBalancer loadBalancer;
+    private final Collection<Subchannel> channels;
 
-    private PolarisPicker() {}
+    private final RouterAPI routerAPI;
 
-    public PolarisPicker(PolarisLoadBalancer loadBalancer) {
-        this.loadBalancer = loadBalancer;
+    private final String rule;
+
+    public PolarisPicker(final Collection<Subchannel> channels, final String rule, final RouterAPI routerAPI) {
+        this.channels = channels;
+        this.routerAPI = routerAPI;
+        this.rule = rule;
     }
 
     @Override
     public PickResult pickSubchannel(PickSubchannelArgs args) {
-        return null;
+        Map<Instance, Subchannel> instances = channels.stream()
+                .collect(HashMap::new,
+                        ((hm, channel) -> hm.put(channel.getAttributes().get(Common.INSTANCE_KEY), channel)),
+                        HashMap::putAll);
+        final ProcessLoadBalanceRequest request = new ProcessLoadBalanceRequest();
+        final Criteria criteria = new Criteria();
+        criteria.setHashKey(args.getMethodDescriptor().getFullMethodName());
+        request.setLbPolicy(rule);
+        request.setCriteria(criteria);
+        request.setDstInstances(new DefaultServiceInstances(null, new ArrayList<>(instances.keySet())));
+        ProcessLoadBalanceResponse response = routerAPI.processLoadBalance(request);
+        final Instance target = response.getTargetInstance();
+
+        Subchannel channel = instances.get(target);
+        return channel == null ? PickResult.withNoResult() : PickResult.withSubchannel(channel);
     }
 
-    static final class EmptyPicker extends PolarisPicker {
+    public static final class EmptyPicker extends SubchannelPicker  {
         private final Status status;
 
         EmptyPicker(Status status) {

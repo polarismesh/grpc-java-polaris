@@ -17,21 +17,27 @@
 package com.tencent.polaris.grpc.resolver;
 
 import com.tencent.polaris.api.core.ConsumerAPI;
+import com.tencent.polaris.api.listener.ServiceListener;
 import com.tencent.polaris.api.pojo.Instance;
+import com.tencent.polaris.api.pojo.ServiceChangeEvent;
 import com.tencent.polaris.api.rpc.GetInstancesRequest;
 import com.tencent.polaris.api.rpc.InstancesResponse;
+import com.tencent.polaris.api.rpc.UnWatchServiceRequest;
+import com.tencent.polaris.api.rpc.WatchServiceRequest;
+import com.tencent.polaris.grpc.util.Common;
 import io.grpc.Attributes;
+import io.grpc.Attributes.Key;
 import io.grpc.EquivalentAddressGroup;
 import io.grpc.NameResolver;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Service discovery class
@@ -39,57 +45,98 @@ import java.util.stream.Collectors;
  * @author lixiaoshuang
  */
 public class PolarisNameResolver extends NameResolver {
-    
+
     private final Logger log = LoggerFactory.getLogger(PolarisNameResolver.class);
-    
+
     private final ConsumerAPI consumerAPI;
-    
+
     private final String namespace;
-    
+
     private final String service;
-    
+
     private static final String DEFAULT_NAMESPACE = "default";
-    
-    
+
+    private ServiceChangeWatcher watcher;
+
     public PolarisNameResolver(URI targetUri, ConsumerAPI consumerAPI) {
         this.service = targetUri.getHost();
         this.namespace = targetUri.getQuery() == null ? DEFAULT_NAMESPACE : targetUri.getQuery().split("=")[1];
         this.consumerAPI = consumerAPI;
     }
-    
+
     @Override
     public String getServiceAuthority() {
         return service;
     }
-    
+
     @Override
     public void start(Listener listener) {
         GetInstancesRequest request = new GetInstancesRequest();
         request.setNamespace(namespace);
         request.setService(service);
         InstancesResponse response = consumerAPI.getInstances(request);
-        log.debug("getInstances response:{}", response);
+        log.info("namespace:{} service:{} instance size:{}", namespace, service,
+                response.getInstances().length);
         notifyListener(listener, response);
+        doWatch(listener);
     }
 
     private void doWatch(Listener listener) {
-
+        this.watcher = new ServiceChangeWatcher(listener);
+        consumerAPI.watchService(WatchServiceRequest.builder()
+                .namespace(namespace)
+                .service(service)
+                .listeners(Collections.singletonList(this.watcher))
+                .build());
     }
 
     private void notifyListener(Listener listener, InstancesResponse response) {
         List<EquivalentAddressGroup> equivalentAddressGroups = null;
         if (Objects.nonNull(response)) {
             equivalentAddressGroups = Arrays.stream(response.getInstances()).filter(Instance::isHealthy)
-                    .map(instance -> new EquivalentAddressGroup(
-                            new InetSocketAddress(instance.getHost(), instance.getPort())))
+                    .map(PolarisNameResolver::buildEquivalentAddressGroup)
                     .collect(Collectors.toList());
         }
         listener.onAddresses(equivalentAddressGroups, Attributes.EMPTY);
     }
-    
+
     @Override
     public void shutdown() {
-    
+        if (this.watcher != null) {
+            consumerAPI.unWatchService(UnWatchServiceRequest.UnWatchServiceRequestBuilder.anUnWatchServiceRequest()
+                    .listeners(Collections.singletonList(this.watcher))
+                    .namespace(namespace)
+                    .service(service)
+                    .build());
+        }
     }
-    
+
+    private class ServiceChangeWatcher implements ServiceListener {
+
+        private final Listener listener;
+
+        ServiceChangeWatcher(Listener listener) {
+            this.listener = listener;
+        }
+
+        @Override
+        public void onEvent(ServiceChangeEvent event) {
+            log.info("receive:{} service:{} final instance size:{}", namespace, service,
+                    event.getAllInstances().size());
+            List<EquivalentAddressGroup> equivalentAddressGroups = event.getAllInstances()
+                    .stream()
+                    .filter(Instance::isHealthy)
+                    .map(PolarisNameResolver::buildEquivalentAddressGroup)
+                    .collect(Collectors.toList());
+            listener.onAddresses(equivalentAddressGroups, Attributes.EMPTY);
+        }
+
+    }
+
+    private static EquivalentAddressGroup buildEquivalentAddressGroup(Instance instance) {
+        InetSocketAddress address = new InetSocketAddress(instance.getHost(), instance.getPort());
+        Attributes attributes = Attributes.newBuilder().set(Common.INSTANCE_KEY, instance).build();
+        return new EquivalentAddressGroup(address, attributes);
+    }
+
 }

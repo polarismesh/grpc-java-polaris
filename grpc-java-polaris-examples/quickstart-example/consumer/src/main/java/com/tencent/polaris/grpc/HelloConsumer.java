@@ -29,7 +29,9 @@ public class HelloConsumer {
     private ManagedChannel channel;
     
     public HelloConsumer() {
-        channel = PolarisManagedChannelBuilder.forTarget("polaris://EchoServerGRPCJava").usePlaintext()
+        channel = PolarisManagedChannelBuilder.forTarget("polaris://EchoServerGRPCJava")
+                .usePlaintext()
+                .defaultLoadBalancingPolicy("")
                 .build();
     }
     

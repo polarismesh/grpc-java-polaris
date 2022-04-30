@@ -17,43 +17,17 @@
 package com.tencent.polaris.grpc.loadbalance;
 
 import com.tencent.polaris.client.api.SDKContext;
-import io.grpc.LoadBalancer;
-import io.grpc.LoadBalancer.Helper;
-import io.grpc.LoadBalancerProvider;
+import io.grpc.LoadBalancerRegistry;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public class PolarisLoadBalancerProvider extends LoadBalancerProvider {
+public final class PolarisLoadBalancerFactory {
 
-    public static final String LOADBALANCER_PROVIDER = "polaris";
+    private PolarisLoadBalancerFactory() {}
 
-    private final SDKContext context;
-
-    private final String rule;
-
-    public PolarisLoadBalancerProvider(SDKContext context, final String rule) {
-        this.context = context;
-        this.rule = rule;
+    public static void init(final SDKContext context, final String rule) {
+        LoadBalancerRegistry.getDefaultRegistry().register(new PolarisLoadBalancerProvider(context, rule));
     }
 
-    @Override
-    public boolean isAvailable() {
-        return true;
-    }
-
-    @Override
-    public int getPriority() {
-        return 0;
-    }
-
-    @Override
-    public String getPolicyName() {
-        return LOADBALANCER_PROVIDER;
-    }
-
-    @Override
-    public LoadBalancer newLoadBalancer(Helper helper) {
-        return new PolarisLoadBalancer(context, rule, helper);
-    }
 }
