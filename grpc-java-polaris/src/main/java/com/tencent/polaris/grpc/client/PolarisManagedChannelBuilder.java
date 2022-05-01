@@ -16,47 +16,60 @@
 
 package com.tencent.polaris.grpc.client;
 
-import static com.tencent.polaris.grpc.loadbalance.PolarisLoadBalancerProvider.LOADBALANCER_PROVIDER;
 
+import com.tencent.polaris.api.pojo.ServiceInfo;
 import com.tencent.polaris.client.api.SDKContext;
 import com.tencent.polaris.grpc.loadbalance.PolarisLoadBalancerFactory;
 import com.tencent.polaris.grpc.resolver.PolarisNameResolverFactory;
+import com.tencent.polaris.grpc.util.JvmShutdownHookUtil;
 import io.grpc.ClientInterceptor;
 import io.grpc.CompressorRegistry;
 import io.grpc.DecompressorRegistry;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.NameResolver.Factory;
+
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
+
+import static com.tencent.polaris.grpc.loadbalance.PolarisLoadBalancerProvider.LOADBALANCER_PROVIDER;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public class PolarisManagedChannelBuilder extends ManagedChannelBuilder<PolarisManagedChannelBuilder> {
 
-    private final ManagedChannelBuilder<?> builder;
+    private static final SDKContext context = SDKContext.initContext();
 
-    private String balanceRule;
+    static {
+        JvmShutdownHookUtil.addHook(context::destroy);
+        PolarisLoadBalancerFactory.init(context);
+        PolarisNameResolverFactory.init(context);
+    }
+
+    private final ManagedChannelBuilder<?> builder;
 
     private final List<PolarisClientInterceptor> polarisInterceptors = new ArrayList<>();
 
     private final List<ClientInterceptor> interceptors = new ArrayList<>();
 
-    public PolarisManagedChannelBuilder(ManagedChannelBuilder<?> builder) {
-        this.builder = builder;
+    private final ServiceInfo sourceService;
+
+    private PolarisManagedChannelBuilder(String target, ServiceInfo sourceService) {
+        URI uri = URI.create(target);
+        this.builder = ManagedChannelBuilder.forTarget(uri.toString());
+        this.sourceService = sourceService;
     }
 
     public static ManagedChannelBuilder<PolarisManagedChannelBuilder> forTarget(String target) {
-        ManagedChannelBuilder<?> builder = ManagedChannelBuilder.forTarget(target);
-        return new PolarisManagedChannelBuilder(builder);
+        return new PolarisManagedChannelBuilder(target, null);
     }
 
-    public static ManagedChannelBuilder<?> forAddress(String name, int port) {
-        ManagedChannelBuilder<?> builder = ManagedChannelBuilder.forAddress(name, port);
-        return new PolarisManagedChannelBuilder(builder);
+    public static ManagedChannelBuilder<PolarisManagedChannelBuilder> forTarget(String target, ServiceInfo sourceService) {
+        return new PolarisManagedChannelBuilder(target, sourceService);
     }
 
     @Override
@@ -133,18 +146,11 @@ public class PolarisManagedChannelBuilder extends ManagedChannelBuilder<PolarisM
         return this;
     }
 
-    public PolarisManagedChannelBuilder loadBalanceRule(String rule) {
-        this.balanceRule = rule;
-        return this;
-    }
-
     @Override
     public ManagedChannel build() {
-        SDKContext context = SDKContext.initContext();
-        PolarisLoadBalancerFactory.init(context, this.balanceRule);
-        PolarisNameResolverFactory.init(context);
 
         for (PolarisClientInterceptor clientInterceptor : polarisInterceptors) {
+            clientInterceptor.init(this.sourceService.getNamespace(), this.sourceService.getService(), context);
             this.builder.intercept(clientInterceptor);
         }
         this.builder.intercept(interceptors);

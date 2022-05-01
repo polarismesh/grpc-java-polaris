@@ -30,11 +30,8 @@ public class PolarisLoadBalancerProvider extends LoadBalancerProvider {
 
     private final SDKContext context;
 
-    private final String rule;
-
-    public PolarisLoadBalancerProvider(SDKContext context, final String rule) {
+    public PolarisLoadBalancerProvider(SDKContext context) {
         this.context = context;
-        this.rule = rule;
     }
 
     @Override
@@ -54,6 +51,6 @@ public class PolarisLoadBalancerProvider extends LoadBalancerProvider {
 
     @Override
     public LoadBalancer newLoadBalancer(Helper helper) {
-        return new PolarisLoadBalancer(context, rule, helper);
+        return new PolarisLoadBalancer(context, helper);
     }
 }

@@ -21,7 +21,9 @@ import static io.grpc.ConnectivityState.IDLE;
 import static io.grpc.ConnectivityState.READY;
 import static io.grpc.ConnectivityState.TRANSIENT_FAILURE;
 
+import com.tencent.polaris.api.core.ConsumerAPI;
 import com.tencent.polaris.client.api.SDKContext;
+import com.tencent.polaris.factory.api.DiscoveryAPIFactory;
 import com.tencent.polaris.factory.api.RouterAPIFactory;
 import com.tencent.polaris.grpc.loadbalance.PolarisPicker.EmptyPicker;
 import com.tencent.polaris.router.api.core.RouterAPI;
@@ -42,11 +44,9 @@ import shade.polaris.com.google.common.base.Preconditions;
  */
 public class PolarisLoadBalancer extends LoadBalancer {
 
-    private final RouterAPI routerAPI;
+    private final ConsumerAPI consumerAPI;
 
     private final Helper helper;
-
-    private final String rule;
 
     private ConnectivityState currentState;
 
@@ -54,9 +54,8 @@ public class PolarisLoadBalancer extends LoadBalancer {
 
     private final Map<EquivalentAddressGroup, Subchannel> subChannels = new ConcurrentHashMap<>();
 
-    public PolarisLoadBalancer(final SDKContext context, final String rule, final Helper helper) {
-        this.routerAPI = RouterAPIFactory.createRouterAPIByContext(context);
-        this.rule = rule;
+    public PolarisLoadBalancer(final SDKContext context, final Helper helper) {
+        this.consumerAPI = DiscoveryAPIFactory.createConsumerAPIByContext(context);
         this.helper = Preconditions.checkNotNull(helper);
     }
 
@@ -130,7 +129,7 @@ public class PolarisLoadBalancer extends LoadBalancer {
             }
             updateBalancingState(isConnecting ? CONNECTING : TRANSIENT_FAILURE, new EmptyPicker(aggStatus));
         } else {
-            updateBalancingState(READY, new PolarisPicker(activeList, rule, this.routerAPI));
+            updateBalancingState(READY, new PolarisPicker(activeList, this.consumerAPI, this.helper));
         }
     }
 
@@ -145,6 +144,5 @@ public class PolarisLoadBalancer extends LoadBalancer {
     public void shutdown() {
 
     }
-
 
 }

@@ -20,21 +20,20 @@ import com.tencent.polaris.api.core.ConsumerAPI;
 import com.tencent.polaris.api.listener.ServiceListener;
 import com.tencent.polaris.api.pojo.Instance;
 import com.tencent.polaris.api.pojo.ServiceChangeEvent;
-import com.tencent.polaris.api.rpc.GetInstancesRequest;
+import com.tencent.polaris.api.pojo.ServiceInstances;
+import com.tencent.polaris.api.rpc.GetHealthyInstancesRequest;
 import com.tencent.polaris.api.rpc.InstancesResponse;
 import com.tencent.polaris.api.rpc.UnWatchServiceRequest;
 import com.tencent.polaris.api.rpc.WatchServiceRequest;
+import com.tencent.polaris.client.api.SDKContext;
 import com.tencent.polaris.grpc.util.Common;
 import io.grpc.Attributes;
-import io.grpc.Attributes.Key;
 import io.grpc.EquivalentAddressGroup;
 import io.grpc.NameResolver;
 import java.net.InetSocketAddress;
 import java.net.URI;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,7 +45,9 @@ import org.slf4j.LoggerFactory;
  */
 public class PolarisNameResolver extends NameResolver {
 
-    private final Logger log = LoggerFactory.getLogger(PolarisNameResolver.class);
+    private static final Logger LOG = LoggerFactory.getLogger(PolarisNameResolver.class);
+
+    private static final String DEFAULT_NAMESPACE = "default";
 
     private final ConsumerAPI consumerAPI;
 
@@ -54,13 +55,14 @@ public class PolarisNameResolver extends NameResolver {
 
     private final String service;
 
-    private static final String DEFAULT_NAMESPACE = "default";
-
     private ServiceChangeWatcher watcher;
 
-    public PolarisNameResolver(URI targetUri, ConsumerAPI consumerAPI) {
+    private final SDKContext context;
+
+    public PolarisNameResolver(URI targetUri, SDKContext context, ConsumerAPI consumerAPI) {
         this.service = targetUri.getHost();
         this.namespace = targetUri.getQuery() == null ? DEFAULT_NAMESPACE : targetUri.getQuery().split("=")[1];
+        this.context = context;
         this.consumerAPI = consumerAPI;
     }
 
@@ -71,11 +73,11 @@ public class PolarisNameResolver extends NameResolver {
 
     @Override
     public void start(Listener listener) {
-        GetInstancesRequest request = new GetInstancesRequest();
+        GetHealthyInstancesRequest request = new GetHealthyInstancesRequest();
         request.setNamespace(namespace);
         request.setService(service);
-        InstancesResponse response = consumerAPI.getInstances(request);
-        log.info("namespace:{} service:{} instance size:{}", namespace, service,
+        InstancesResponse response = consumerAPI.getHealthyInstancesInstance(request);
+        LOG.info("namespace:{} service:{} instance size:{}", namespace, service,
                 response.getInstances().length);
         notifyListener(listener, response);
         doWatch(listener);
@@ -83,7 +85,7 @@ public class PolarisNameResolver extends NameResolver {
 
     private void doWatch(Listener listener) {
         this.watcher = new ServiceChangeWatcher(listener);
-        consumerAPI.watchService(WatchServiceRequest.builder()
+        this.consumerAPI.watchService(WatchServiceRequest.builder()
                 .namespace(namespace)
                 .service(service)
                 .listeners(Collections.singletonList(this.watcher))
@@ -91,19 +93,21 @@ public class PolarisNameResolver extends NameResolver {
     }
 
     private void notifyListener(Listener listener, InstancesResponse response) {
-        List<EquivalentAddressGroup> equivalentAddressGroups = null;
-        if (Objects.nonNull(response)) {
-            equivalentAddressGroups = Arrays.stream(response.getInstances()).filter(Instance::isHealthy)
-                    .map(PolarisNameResolver::buildEquivalentAddressGroup)
+        ServiceInstances serviceInstances = response.toServiceInstances();
+
+        if (!serviceInstances.getInstances().isEmpty()) {
+            List<EquivalentAddressGroup> equivalentAddressGroups = serviceInstances.getInstances()
+                    .stream()
+                    .map(this::buildEquivalentAddressGroup)
                     .collect(Collectors.toList());
+            listener.onAddresses(equivalentAddressGroups, Attributes.EMPTY);
         }
-        listener.onAddresses(equivalentAddressGroups, Attributes.EMPTY);
     }
 
     @Override
     public void shutdown() {
         if (this.watcher != null) {
-            consumerAPI.unWatchService(UnWatchServiceRequest.UnWatchServiceRequestBuilder.anUnWatchServiceRequest()
+            this.consumerAPI.unWatchService(UnWatchServiceRequest.UnWatchServiceRequestBuilder.anUnWatchServiceRequest()
                     .listeners(Collections.singletonList(this.watcher))
                     .namespace(namespace)
                     .service(service)
@@ -121,21 +125,25 @@ public class PolarisNameResolver extends NameResolver {
 
         @Override
         public void onEvent(ServiceChangeEvent event) {
-            log.info("receive:{} service:{} final instance size:{}", namespace, service,
+            LOG.info("receive:{} service:{} final instance size:{}", namespace, service,
                     event.getAllInstances().size());
-            List<EquivalentAddressGroup> equivalentAddressGroups = event.getAllInstances()
-                    .stream()
-                    .filter(Instance::isHealthy)
-                    .map(PolarisNameResolver::buildEquivalentAddressGroup)
-                    .collect(Collectors.toList());
-            listener.onAddresses(equivalentAddressGroups, Attributes.EMPTY);
+
+            GetHealthyInstancesRequest request = new GetHealthyInstancesRequest();
+            request.setNamespace(namespace);
+            request.setService(service);
+            InstancesResponse response = consumerAPI.getHealthyInstancesInstance(request);
+            notifyListener(listener, response);
         }
 
     }
 
-    private static EquivalentAddressGroup buildEquivalentAddressGroup(Instance instance) {
+    private EquivalentAddressGroup buildEquivalentAddressGroup(Instance instance) {
         InetSocketAddress address = new InetSocketAddress(instance.getHost(), instance.getPort());
-        Attributes attributes = Attributes.newBuilder().set(Common.INSTANCE_KEY, instance).build();
+        Attributes attributes = Attributes.newBuilder()
+                .set(Common.INSTANCE_KEY, instance)
+                .set(Common.TARGET_NAMESPACE_KEY, namespace)
+                .set(Common.TARGET_SERVICE_KEY, service)
+                .build();
         return new EquivalentAddressGroup(address, attributes);
     }
 

@@ -43,12 +43,14 @@ public class PolarisNameResolverProvider extends NameResolverProvider {
     private static final String DEFAULT_SCHEME = "polaris";
 
     private static final String PATTERN = "polaris://[a-zA-Z0-9_:.-]{1,128}";
-    
+
+    private final SDKContext context;
+
     private final ConsumerAPI consumerAPI;
 
     public PolarisNameResolverProvider(final SDKContext context) {
+        this.context = context;
         this.consumerAPI = DiscoveryAPIFactory.createConsumerAPIByContext(context);
-        JvmShutdownHookUtil.addHook(consumerAPI::destroy);
     }
 
     /**
@@ -67,7 +69,7 @@ public class PolarisNameResolverProvider extends NameResolverProvider {
                 log.error("target format is wrong,reference: polaris://[serviceName]");
                 return null;
             }
-            return new PolarisNameResolver(targetUri, consumerAPI);
+            return new PolarisNameResolver(targetUri, context, consumerAPI);
         }
         return null;
     }

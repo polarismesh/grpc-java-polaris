@@ -59,11 +59,19 @@ public class PolarisRateLimitServerInterceptor extends PolarisServerInterceptor 
     private BiFunction<QuotaResponse, String, Status> rateLimitCallback = (quotaResponse, method) ->
             Status.UNAVAILABLE.withDescription(quotaResponse.getInfo());
 
-    private PolarisRateLimitServerInterceptor() {
+    public PolarisRateLimitServerInterceptor() {
     }
 
-    public static PolarisRateLimitInterceptorBuilder builder() {
-        return new PolarisRateLimitInterceptorBuilder();
+    public void setCustomKeyPrefix(String customKeyPrefix) {
+        this.customKeyPrefix = customKeyPrefix;
+    }
+
+    public void setCustomLabels(Set<String> customLabels) {
+        this.customLabels = customLabels;
+    }
+
+    public void setRateLimitCallback(BiFunction<QuotaResponse, String, Status> rateLimitCallback) {
+        this.rateLimitCallback = rateLimitCallback;
     }
 
     @Override
@@ -134,38 +142,4 @@ public class PolarisRateLimitServerInterceptor extends PolarisServerInterceptor 
     }
 
 
-    public static final class PolarisRateLimitInterceptorBuilder {
-
-        private String customKeyPrefix = "";
-        private Set<String> customLabels = Collections.emptySet();
-        private BiFunction<QuotaResponse, String, Status> rateLimitCallback = (quotaResponse, method) ->
-                Status.UNAVAILABLE.withDescription(quotaResponse.getInfo());
-
-        private PolarisRateLimitInterceptorBuilder() {
-        }
-
-        public PolarisRateLimitInterceptorBuilder customKeyPrefix(String customKeyPrefix) {
-            this.customKeyPrefix = customKeyPrefix;
-            return this;
-        }
-
-        public PolarisRateLimitInterceptorBuilder customLabels(Set<String> customLabels) {
-            this.customLabels = customLabels;
-            return this;
-        }
-
-        public PolarisRateLimitInterceptorBuilder rateLimitCallback(
-                BiFunction<QuotaResponse, String, Status> rateLimitCallback) {
-            this.rateLimitCallback = rateLimitCallback;
-            return this;
-        }
-
-        public PolarisRateLimitServerInterceptor build() {
-            PolarisRateLimitServerInterceptor polarisRateLimitInterceptor = new PolarisRateLimitServerInterceptor();
-            polarisRateLimitInterceptor.customKeyPrefix = this.customKeyPrefix;
-            polarisRateLimitInterceptor.rateLimitCallback = this.rateLimitCallback;
-            polarisRateLimitInterceptor.customLabels = this.customLabels;
-            return polarisRateLimitInterceptor;
-        }
-    }
 }

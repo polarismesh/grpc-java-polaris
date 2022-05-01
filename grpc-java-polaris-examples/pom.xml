@@ -18,6 +18,7 @@
 
     <modules>
         <module>quickstart-example</module>
+        <module>ratelimit</module>
     </modules>
     
     <properties>

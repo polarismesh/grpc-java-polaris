@@ -14,20 +14,21 @@
  * the License.
  */
 
-package com.tencent.polaris.grpc.util;
+package com.tencent.polaris.grpc;
 
-import com.tencent.polaris.api.pojo.Instance;
-import io.grpc.Attributes.Key;
+import com.tencent.polaris.grpc.HelloPolaris.response;
+import io.grpc.stub.StreamObserver;
 
 /**
- * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
+ * @author lixiaoshuang
  */
-public class Common {
-
-    public static final Key<Instance> INSTANCE_KEY = Key.create(Instance.class.getName());
-
-    public static final Key<String> TARGET_NAMESPACE_KEY = Key.create("POLARIS_SOURCE_NAMESPACE");
-
-    public static final Key<String> TARGET_SERVICE_KEY = Key.create("POLARIS_SOURCE_SERVICE");
-
+public class HelloProvider extends HelloGrpc.HelloImplBase {
+    
+    @Override
+    public void sayHello(HelloPolaris.request request, StreamObserver<response> responseObserver) {
+        String msg = request.getMsg();
+        HelloPolaris.response response = HelloPolaris.response.newBuilder().setData(msg).build();
+        responseObserver.onNext(response);
+        responseObserver.onCompleted();
+    }
 }

@@ -26,8 +26,8 @@ public final class PolarisLoadBalancerFactory {
 
     private PolarisLoadBalancerFactory() {}
 
-    public static void init(final SDKContext context, final String rule) {
-        LoadBalancerRegistry.getDefaultRegistry().register(new PolarisLoadBalancerProvider(context, rule));
+    public static void init(final SDKContext context) {
+        LoadBalancerRegistry.getDefaultRegistry().register(new PolarisLoadBalancerProvider(context));
     }
 
 }

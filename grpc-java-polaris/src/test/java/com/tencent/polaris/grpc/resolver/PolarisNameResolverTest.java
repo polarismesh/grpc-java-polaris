@@ -19,6 +19,7 @@ package com.tencent.polaris.grpc.resolver;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import com.tencent.polaris.api.core.ConsumerAPI;
+import com.tencent.polaris.client.api.SDKContext;
 import io.grpc.NameResolver;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -40,7 +41,7 @@ public class PolarisNameResolverTest {
     @BeforeEach
     public void setUp() throws URISyntaxException {
         URI targetUri = new URI("polaris://grpc-demo-java?namespace=default");
-        polarisNameResolver = new PolarisNameResolver(targetUri, consumerAPI);
+        polarisNameResolver = new PolarisNameResolver(targetUri, SDKContext.initContext(), consumerAPI);
     }
     
     @Test
