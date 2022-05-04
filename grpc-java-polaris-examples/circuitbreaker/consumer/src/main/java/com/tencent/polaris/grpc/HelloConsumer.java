@@ -17,27 +17,28 @@
 package com.tencent.polaris.grpc;
 
 import com.tencent.polaris.grpc.client.PolarisManagedChannelBuilder;
-import com.tencent.polaris.grpc.resolver.PolarisNameResolverProvider;
 import io.grpc.ManagedChannel;
-import io.grpc.ManagedChannelBuilder;
-import io.grpc.NameResolverRegistry;
 import lombok.extern.slf4j.Slf4j;
 
 /**
  * @author lixiaoshuang
  */
 @Slf4j
-public class HiConsumer {
+public class HelloConsumer {
     
-    public static void main(String[] args) {
-        
-        ManagedChannel channel = PolarisManagedChannelBuilder.forTarget("polaris://RateLimitServerGRPCJava").usePlaintext()
+    private ManagedChannel channel;
+    
+    public HelloConsumer() {
+        channel = PolarisManagedChannelBuilder.forTarget("polaris://CircuitBreakerServerGRPCJava")
+                .usePlaintext()
                 .build();
-        
-        HiGrpc.HiBlockingStub hiBlockingStub = HiGrpc.newBlockingStub(channel);
-        HelloPolaris.request request = HelloPolaris.request.newBuilder().setMsg("hi polaris").build();
-        HelloPolaris.response response = hiBlockingStub.sayHi(request);
+    }
+    
+    public String hello(String value) {
+        HelloGrpc.HelloBlockingStub helloBlockingStub = HelloGrpc.newBlockingStub(channel);
+        HelloPolaris.request request = HelloPolaris.request.newBuilder().setMsg(value).build();
+        HelloPolaris.response response = helloBlockingStub.sayHello(request);
         System.out.println("grpc server response ---------> :" + response.getData());
-        System.exit(1);
+        return response.getData();
     }
 }

@@ -21,20 +21,19 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 import com.tencent.polaris.api.utils.StringUtils;
-import lombok.extern.slf4j.Slf4j;
-
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.Executors;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * @author lixiaoshuang
  */
 @Slf4j
 public class ConsumerServer {
-    
+
     public static void main(String[] args) throws IOException {
         HttpServer httpServer = HttpServer.create(new InetSocketAddress(40041), 0);
         httpServer.createContext("/echo", new ConsumerHttpHandler());
@@ -46,40 +45,49 @@ public class ConsumerServer {
 
 @Slf4j
 class ConsumerHttpHandler implements HttpHandler {
-    
+
     private static final HelloConsumer HELLO_CONSUMER = new HelloConsumer();
-    
+
     @Override
     public void handle(HttpExchange httpExchange) {
-        
-        try {
-            String paramStr = httpExchange.getRequestURI().getQuery();
-            String param = "";
-            if (StringUtils.isNotBlank(paramStr)) {
-                String[] split = paramStr.split("=");
-                param = split[1];
-            }
-            String response = HELLO_CONSUMER.hello(param);
-            handleResponse(httpExchange, response);
-        } catch (Exception ex) {
-            log.error("ConsumerHttpHandler error", ex);
+        StringBuilder builder = new StringBuilder();
+        String paramStr = httpExchange.getRequestURI().getQuery();
+        String param = "";
+        if (StringUtils.isNotBlank(paramStr)) {
+            String[] split = paramStr.split("=");
+            param = split[1];
         }
+        for (int i = 0; i < 10; i++) {
+            try {
+                String response = HELLO_CONSUMER.hello(param);
+                builder.append(response);
+            } catch (Exception ex) {
+                log.error("ConsumerHttpHandler error", ex);
+                builder.append(ex);
+            }
+            builder.append("\n");
+        }
+        handleResponse(httpExchange, builder.toString());
     }
-    
+
     /**
      * Processing response
      */
-    private void handleResponse(HttpExchange httpExchange, String responseContent) throws Exception {
-        log.info("");
-        byte[] responseContentByte = responseContent.getBytes(StandardCharsets.UTF_8);
-        
-        httpExchange.getResponseHeaders().add("Content-Type:", "text/plain;charset=utf-8");
-        
-        httpExchange.sendResponseHeaders(200, responseContentByte.length);
-        
-        OutputStream out = httpExchange.getResponseBody();
-        out.write(responseContentByte);
-        out.flush();
-        out.close();
+    private void handleResponse(HttpExchange httpExchange, String responseContent) {
+        try {
+            log.info("");
+            byte[] responseContentByte = responseContent.getBytes(StandardCharsets.UTF_8);
+
+            httpExchange.getResponseHeaders().add("Content-Type:", "text/plain;charset=utf-8");
+
+            httpExchange.sendResponseHeaders(200, responseContentByte.length);
+
+            OutputStream out = httpExchange.getResponseBody();
+            out.write(responseContentByte);
+            out.flush();
+            out.close();
+        } catch (Throwable ex) {
+            throw new RuntimeException(ex);
+        }
     }
 }

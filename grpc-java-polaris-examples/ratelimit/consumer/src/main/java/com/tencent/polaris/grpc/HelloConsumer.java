@@ -30,7 +30,7 @@ public class HelloConsumer {
     private ManagedChannel channel;
     
     public HelloConsumer() {
-        channel = PolarisManagedChannelBuilder.forTarget("polaris://RateLimitGRPCJava")
+        channel = PolarisManagedChannelBuilder.forTarget("polaris://RateLimitServerGRPCJava")
                 .usePlaintext()
                 .executor(Executors.newSingleThreadExecutor())
                 .offloadExecutor(Executors.newSingleThreadExecutor())

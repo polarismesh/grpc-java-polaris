@@ -35,9 +35,8 @@ public class ServerMain {
 
         Server polarisGrpcServer = PolarisGrpcServerBuilder
                 .forPort(0)
-                //.host("127.0.0.1")
                 .namespace("default")
-                .applicationName("RouterGRPCJava")
+                .applicationName("RouterServerGRPCJava")
                 .metadata(metadata)
                 .ttl(5)
                 .addService(new HelloProvider(metadata))

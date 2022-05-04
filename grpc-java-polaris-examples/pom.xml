@@ -20,6 +20,7 @@
         <module>quickstart-example</module>
         <module>ratelimit</module>
         <module>router</module>
+        <module>circuitbreaker</module>
     </modules>
     
     <properties>

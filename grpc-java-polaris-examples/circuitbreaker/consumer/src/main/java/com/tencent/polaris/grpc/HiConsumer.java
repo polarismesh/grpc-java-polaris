@@ -31,7 +31,8 @@ public class HiConsumer {
     
     public static void main(String[] args) {
         
-        ManagedChannel channel = PolarisManagedChannelBuilder.forTarget("polaris://RateLimitServerGRPCJava").usePlaintext()
+        ManagedChannel channel = PolarisManagedChannelBuilder.forTarget("polaris://CircuitBreakerServerGRPCJava")
+                .usePlaintext()
                 .build();
         
         HiGrpc.HiBlockingStub hiBlockingStub = HiGrpc.newBlockingStub(channel);

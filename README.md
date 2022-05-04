@@ -43,18 +43,17 @@ The server uses the `PolarisGrpcServer` provided by the grpc-java-polaris packag
 PolarisGrpcServer polarisGrpcServer = PolarisGrpcServer.builder()
         .port(50051)
         .namespace("default")
-        .serviceName("grpc-demo-java")
-        .metaData(null)
+        .applicationName("grpc-demo-java")
+        .metadata(null)
         .bindableServices(services)
         .build();
         
 polarisGrpcServer.start();
 ```
 
-The client needs to register the PolarisNameResolverProvider in the NameResolverRegistry to provide the service discovery function:
+The client need replace the ManagedChannelBuilder to PolarisManagedChannelBuilder:
 ```
-NameResolverRegistry.getDefaultRegistry().register(new PolarisNameResolverProvider());
-ManagedChannel channel = ManagedChannelBuilder.forTarget("polaris://grpc-demo-java:8080?namespace=default")
+ManagedChannel channel = PolarisManagedChannelBuilder.forTarget("polaris://grpc-demo-java:8080?namespace=default")
         .usePlaintext().build();
 ```
 

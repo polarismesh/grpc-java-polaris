@@ -16,32 +16,18 @@
 
 package com.tencent.polaris.grpc;
 
-import com.tencent.polaris.grpc.server.PolarisGrpcServerBuilder;
-
-import io.grpc.Server;
-import java.io.IOException;
+import io.grpc.stub.StreamObserver;
 
 /**
  * @author lixiaoshuang
  */
-public class ServerMain {
-
-    public static void main(String[] args) {
-        Server polarisGrpcServer = PolarisGrpcServerBuilder
-                .forPort(0)
-                .namespace("default")
-                .applicationName("DiscoverServerGRPCJava")
-                .metadata(null)
-                .ttl(5)
-                .addService(new HelloProvider())
-                .addService(new HiProvider())
-                .build();
-
-        try {
-            polarisGrpcServer.start();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
+public class HelloProvider extends HelloGrpc.HelloImplBase {
+    
+    @Override
+    public void sayHello(HelloPolaris.request request, StreamObserver<HelloPolaris.response> responseObserver) {
+        String msg = request.getMsg();
+        HelloPolaris.response response = HelloPolaris.response.newBuilder().setData(msg).build();
+        responseObserver.onNext(response);
+        responseObserver.onCompleted();
     }
 }

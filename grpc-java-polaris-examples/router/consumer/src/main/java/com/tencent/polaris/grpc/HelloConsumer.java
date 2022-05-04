@@ -40,10 +40,8 @@ public class HelloConsumer {
     private final ManagedChannel channel;
     
     public HelloConsumer() {
-        channel = PolarisManagedChannelBuilder.forTarget("polaris://RouterGRPCJava")
+        channel = PolarisManagedChannelBuilder.forTarget("polaris://RouterServerGRPCJava")
                 .usePlaintext()
-                .executor(Executors.newSingleThreadExecutor())
-                .offloadExecutor(Executors.newSingleThreadExecutor())
                 .build();
 
         whiteHeaders.add("env");

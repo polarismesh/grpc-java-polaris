@@ -166,13 +166,6 @@ public class PolarisManagedChannelBuilder {
         return this;
     }
 
-
-    public PolarisManagedChannelBuilder defaultLoadBalancingPolicy(String policy) {
-        this.builder.defaultLoadBalancingPolicy(policy);
-        return this;
-    }
-
-
     public PolarisManagedChannelBuilder enableFullStreamDecompression() {
         this.builder.enableFullStreamDecompression();
         return this;
