@@ -17,7 +17,6 @@
 package com.tencent.polaris.grpc.resolver;
 
 import com.google.gson.Gson;
-import com.squareup.okhttp.Headers;
 import com.tencent.polaris.api.core.ConsumerAPI;
 import com.tencent.polaris.api.listener.ServiceListener;
 import com.tencent.polaris.api.pojo.Instance;
@@ -34,14 +33,12 @@ import com.tencent.polaris.grpc.util.NetworkHelper;
 import io.grpc.Attributes;
 import io.grpc.EquivalentAddressGroup;
 import io.grpc.NameResolver;
-import io.netty.handler.codec.HeadersUtils;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
