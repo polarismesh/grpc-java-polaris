@@ -37,7 +37,7 @@ public class ConsumerServer {
     
     public static void main(String[] args) throws IOException {
         HttpServer httpServer = HttpServer.create(new InetSocketAddress(40041), 0);
-        httpServer.createContext("/polaris/grpc/quickstart/consumer", new ConsumerHttpHandler());
+        httpServer.createContext("/echo", new ConsumerHttpHandler());
         httpServer.setExecutor(Executors.newFixedThreadPool(10));
         httpServer.start();
         log.info("http server start on port 40041");
@@ -47,7 +47,7 @@ public class ConsumerServer {
 @Slf4j
 class ConsumerHttpHandler implements HttpHandler {
     
-    private static final HelloConsumer HELLO_CONSUMER = new HelloConsumer();
+    private final HelloConsumer consumer = new HelloConsumer();
     
     @Override
     public void handle(HttpExchange httpExchange) {
@@ -59,10 +59,15 @@ class ConsumerHttpHandler implements HttpHandler {
                 String[] split = paramStr.split("=");
                 param = split[1];
             }
-            String response = HELLO_CONSUMER.hello(param);
+            String response = consumer.hello(param);
             handleResponse(httpExchange, response);
         } catch (Exception ex) {
-            log.error("ConsumerHttpHandler error", ex);
+            ex.printStackTrace();
+            try {
+                handleThrowable(httpExchange, ex);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
     }
     
@@ -70,16 +75,27 @@ class ConsumerHttpHandler implements HttpHandler {
      * Processing response
      */
     private void handleResponse(HttpExchange httpExchange, String responseContent) throws Exception {
-        log.info("");
         byte[] responseContentByte = responseContent.getBytes(StandardCharsets.UTF_8);
         
         httpExchange.getResponseHeaders().add("Content-Type:", "text/plain;charset=utf-8");
-        
-        httpExchange.sendResponseHeaders(200, responseContentByte.length);
+        httpExchange.sendResponseHeaders(200, 0);
         
         OutputStream out = httpExchange.getResponseBody();
         out.write(responseContentByte);
-        out.flush();
+        out.close();
+    }
+
+    /**
+     * Processing response
+     */
+    private void handleThrowable(HttpExchange httpExchange, Throwable throwable) throws Exception {
+        byte[] responseContentByte = throwable.getMessage().getBytes(StandardCharsets.UTF_8);
+
+        httpExchange.getResponseHeaders().add("Content-Type:", "text/plain;charset=utf-8");
+        httpExchange.sendResponseHeaders(500, 0);
+
+        OutputStream out = httpExchange.getResponseBody();
+        out.write(responseContentByte);
         out.close();
     }
 }

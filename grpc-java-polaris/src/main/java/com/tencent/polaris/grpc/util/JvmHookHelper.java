@@ -14,22 +14,20 @@
  * the License.
  */
 
-package com.tencent.polaris.grpc.client;
-
-import com.tencent.polaris.client.api.SDKContext;
-import io.grpc.ClientInterceptor;
+package com.tencent.polaris.grpc.util;
 
 /**
- * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
+ * @author lixiaoshuang
  */
-public abstract class PolarisClientInterceptor implements ClientInterceptor {
-
+public class JvmHookHelper {
+    
     /**
+     * Add JVM callback hooks.
      *
-     * @param namespace
-     * @param applicationName
-     * @param context
+     * @param runnable Functional interface
      */
-    protected abstract void init(final String namespace, final String applicationName, final SDKContext context);
-
+    public static boolean addShutdownHook(Runnable runnable) {
+        Runtime.getRuntime().addShutdownHook(new Thread(runnable));
+        return true;
+    }
 }

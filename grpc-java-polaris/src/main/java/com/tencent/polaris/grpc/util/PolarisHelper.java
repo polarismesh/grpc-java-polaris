@@ -40,7 +40,7 @@ public class PolarisHelper {
         private Set<String> customLabels = Collections.emptySet();
 
         private BiFunction<QuotaResponse, String, Status> rateLimitCallback = (quotaResponse, method) ->
-                Status.UNAVAILABLE.withDescription(quotaResponse.getInfo());
+                Status.UNAVAILABLE.withDescription("rate-limit exceeded (server side)");
 
         private PolarisRateLimitInterceptorBuilder() {
         }
@@ -64,8 +64,8 @@ public class PolarisHelper {
         public PolarisRateLimitServerInterceptor build() {
             PolarisRateLimitServerInterceptor polarisRateLimitInterceptor = new PolarisRateLimitServerInterceptor();
             polarisRateLimitInterceptor.setCustomKeyPrefix(this.customKeyPrefix);
-            polarisRateLimitInterceptor.setRateLimitCallback(this.rateLimitCallback);
             polarisRateLimitInterceptor.setCustomLabels(this.customLabels);
+            polarisRateLimitInterceptor.setRateLimitCallback(this.rateLimitCallback);
             return polarisRateLimitInterceptor;
         }
 

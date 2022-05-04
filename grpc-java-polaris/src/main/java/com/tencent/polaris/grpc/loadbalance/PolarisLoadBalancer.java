@@ -21,12 +21,15 @@ import static io.grpc.ConnectivityState.IDLE;
 import static io.grpc.ConnectivityState.READY;
 import static io.grpc.ConnectivityState.TRANSIENT_FAILURE;
 
+import com.google.common.base.Preconditions;
 import com.tencent.polaris.api.core.ConsumerAPI;
+import com.tencent.polaris.api.pojo.ServiceInfo;
 import com.tencent.polaris.client.api.SDKContext;
 import com.tencent.polaris.factory.api.DiscoveryAPIFactory;
-import com.tencent.polaris.factory.api.RouterAPIFactory;
 import com.tencent.polaris.grpc.loadbalance.PolarisPicker.EmptyPicker;
-import com.tencent.polaris.router.api.core.RouterAPI;
+import com.tencent.polaris.grpc.util.Common;
+import com.tencent.polaris.grpc.util.GrpcHelper;
+import io.grpc.Attributes;
 import io.grpc.ConnectivityState;
 import io.grpc.ConnectivityStateInfo;
 import io.grpc.EquivalentAddressGroup;
@@ -37,22 +40,54 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import shade.polaris.com.google.common.base.Preconditions;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
+import java.util.function.Predicate;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public class PolarisLoadBalancer extends LoadBalancer {
 
+    private static final Status EMPTY_OK = Status.OK.withDescription("no subChannels ready");
+
     private final ConsumerAPI consumerAPI;
 
     private final Helper helper;
 
-    private ConnectivityState currentState;
+    private final AtomicReference<ConnectivityState> currentState = new AtomicReference<>(IDLE);
 
-    private static final Status EMPTY_OK = Status.OK.withDescription("no subChannels ready");
+    private final Map<EquivalentAddressGroup, PolarisSubChannel> subChannels = new ConcurrentHashMap<>();
 
-    private final Map<EquivalentAddressGroup, Subchannel> subChannels = new ConcurrentHashMap<>();
+    private final Function<EquivalentAddressGroup, PolarisSubChannel> function = new Function<EquivalentAddressGroup, PolarisSubChannel>() {
+        @Override
+        public PolarisSubChannel apply(EquivalentAddressGroup addressGroup) {
+
+            Attributes newAttributes = addressGroup.getAttributes().toBuilder()
+                    .set(GrpcHelper.STATE_INFO, new GrpcHelper.Ref<>(ConnectivityStateInfo.forNonError(IDLE)))
+                    .build();
+
+            final Subchannel subChannel = helper.createSubchannel(CreateSubchannelArgs.newBuilder()
+                    .setAddresses(addressGroup)
+                    .setAttributes(newAttributes)
+                    .build());
+
+            subChannel.start(state -> processSubChannelState(subChannel, state));
+            subChannel.requestConnection();
+
+            return new PolarisSubChannel(subChannel, newAttributes.get(Common.INSTANCE_KEY));
+        }
+    };
+
+    private final Predicate<ConnectivityState> predicate = (state) -> {
+        if (state == READY) {
+            return true;
+        }
+
+        return state != currentState.get();
+    };
+
+    private ServiceInfo sourceService;
 
     public PolarisLoadBalancer(final SDKContext context, final Helper helper) {
         this.consumerAPI = DiscoveryAPIFactory.createConsumerAPIByContext(context);
@@ -61,40 +96,37 @@ public class PolarisLoadBalancer extends LoadBalancer {
 
     @Override
     public void handleResolvedAddresses(ResolvedAddresses resolvedAddresses) {
+        if (sourceService == null) {
+            this.sourceService = resolvedAddresses.getAttributes().get(Common.SOURCE_SERVICE_INFO);
+        }
+
         List<EquivalentAddressGroup> servers = resolvedAddresses.getAddresses();
         if (servers.isEmpty()) {
             handleNameResolutionError(Status.NOT_FOUND);
             return;
         }
 
-        Set<EquivalentAddressGroup> removed = Utils.setsDifference(subChannels.keySet(), new HashSet<>(servers));
+        Set<EquivalentAddressGroup> removed = GrpcHelper.setsDifference(subChannels.keySet(), new HashSet<>(servers));
         for (EquivalentAddressGroup addressGroup : servers) {
-            final Subchannel subChannel = helper.createSubchannel(CreateSubchannelArgs.newBuilder()
-                    .setAddresses(addressGroup)
-                    .build());
-
-            subChannel.start(state -> processSubChannelState(subChannel, state));
-            subChannels.put(addressGroup, subChannel);
-            subChannel.requestConnection();
-            subChannels.put(addressGroup, subChannel);
+            subChannels.computeIfAbsent(addressGroup, function);
         }
 
         removed.forEach(entry -> {
             Subchannel channel = subChannels.remove(entry);
-            Utils.shutdownSubChannel(channel);
+            GrpcHelper.shutdownSubChannel(channel);
         });
 
     }
 
     @Override
     public void handleNameResolutionError(Status error) {
-        if (currentState != READY) {
+        if (currentState.get() != READY) {
             updateBalancingState(TRANSIENT_FAILURE, new EmptyPicker(error));
         }
     }
 
     private void processSubChannelState(Subchannel subChannel, ConnectivityStateInfo stateInfo) {
-        if (subChannels.get(subChannel.getAddresses()) != subChannel) {
+        if (subChannels.get(subChannel.getAddresses()).getChannel() != subChannel) {
             return;
         }
         if (stateInfo.getState() == TRANSIENT_FAILURE || stateInfo.getState() == IDLE) {
@@ -103,23 +135,25 @@ public class PolarisLoadBalancer extends LoadBalancer {
         if (stateInfo.getState() == IDLE) {
             subChannel.requestConnection();
         }
-        Utils.Ref<ConnectivityStateInfo> subChannelStateRef = Utils.getSubChannelStateInfoRef(subChannel);
-        if (subChannelStateRef.value.getState().equals(TRANSIENT_FAILURE)) {
+        GrpcHelper.Ref<ConnectivityStateInfo> subChannelStateRef = GrpcHelper.getSubChannelStateInfoRef(subChannel);
+        if (subChannelStateRef.getValue().getState().equals(TRANSIENT_FAILURE)) {
             if (stateInfo.getState().equals(CONNECTING) || stateInfo.getState().equals(IDLE)) {
                 return;
             }
         }
-        subChannelStateRef.value = stateInfo;
+        subChannelStateRef.setValue(stateInfo);
         updateBalancingState();
     }
 
     private void updateBalancingState() {
-        List<Subchannel> activeList = Utils.filterNonFailingSubChannels(subChannels.values());
+        AtomicReference<Attributes> holder = new AtomicReference<>();
+        Map<PolarisSubChannel, PolarisSubChannel> activeList = GrpcHelper.filterNonFailingSubChannels(subChannels,
+                holder);
         if (activeList.isEmpty()) {
             boolean isConnecting = false;
             Status aggStatus = EMPTY_OK;
             for (Subchannel subchannel : subChannels.values()) {
-                ConnectivityStateInfo stateInfo = Utils.getSubChannelStateInfoRef(subchannel).value;
+                ConnectivityStateInfo stateInfo = GrpcHelper.getSubChannelStateInfoRef(subchannel).getValue();
                 if (stateInfo.getState() == CONNECTING || stateInfo.getState() == IDLE) {
                     isConnecting = true;
                 }
@@ -129,14 +163,14 @@ public class PolarisLoadBalancer extends LoadBalancer {
             }
             updateBalancingState(isConnecting ? CONNECTING : TRANSIENT_FAILURE, new EmptyPicker(aggStatus));
         } else {
-            updateBalancingState(READY, new PolarisPicker(activeList, this.consumerAPI, this.helper));
+            updateBalancingState(READY, new PolarisPicker(activeList, this.consumerAPI, sourceService, holder.get()));
         }
     }
 
     private void updateBalancingState(ConnectivityState state, SubchannelPicker picker) {
-        if (state != currentState) {
+        if (predicate.test(state)) {
             helper.updateBalancingState(state, picker);
-            currentState = state;
+            currentState.set(state);
         }
     }
 

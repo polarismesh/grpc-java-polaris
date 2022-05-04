@@ -14,7 +14,8 @@ public class ClientCallInfo {
     private final String targetNamespace;
     private final String targetService;
 
-    public ClientCallInfo(String method, Instance instance, ConsumerAPI consumerAPI, String targetNamespace, String targetService) {
+    public ClientCallInfo(String method, Instance instance, ConsumerAPI consumerAPI,
+            String targetNamespace, String targetService) {
         this.method = method;
         this.instance = instance;
         this.consumerAPI = consumerAPI;

@@ -14,28 +14,36 @@
  * the License.
  */
 
-package com.tencent.polaris.grpc.loadbalance;
+package com.tencent.polaris.grpc.util;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static io.grpc.ConnectivityState.READY;
 import static io.grpc.ConnectivityState.SHUTDOWN;
 
-import com.tencent.polaris.api.pojo.Instance;
+import com.tencent.polaris.api.utils.StringUtils;
+import com.tencent.polaris.grpc.loadbalance.PolarisSubChannel;
 import io.grpc.Attributes;
 import io.grpc.ConnectivityStateInfo;
+import io.grpc.EquivalentAddressGroup;
 import io.grpc.LoadBalancer.Subchannel;
+import io.grpc.Metadata;
+import io.grpc.Metadata.Key;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Predicate;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public class Utils {
+public class GrpcHelper {
 
-    static final Attributes.Key<Ref<ConnectivityStateInfo>> STATE_INFO =
+    public static final Attributes.Key<Ref<ConnectivityStateInfo>> STATE_INFO =
             Attributes.Key.create("state-info");
 
     public static final class Ref<T> {
@@ -43,6 +51,14 @@ public class Utils {
         T value;
 
         public Ref(T value) {
+            this.value = value;
+        }
+
+        public T getValue() {
+            return value;
+        }
+
+        public void setValue(T value) {
             this.value = value;
         }
     }
@@ -72,14 +88,36 @@ public class Utils {
                 ConnectivityStateInfo.forNonError(SHUTDOWN);
     }
 
-    public static List<Subchannel> filterNonFailingSubChannels(
-            Collection<Subchannel> subChannels) {
-        List<Subchannel> readySubChannels = new ArrayList<>(subChannels.size());
-        for (Subchannel subchannel : subChannels) {
-            if (isReady(subchannel)) {
-                readySubChannels.add(subchannel);
+    public static Map<PolarisSubChannel, PolarisSubChannel> filterNonFailingSubChannels(
+            Map<EquivalentAddressGroup, PolarisSubChannel> subChannels, AtomicReference<Attributes> attributeHolder) {
+        Map<PolarisSubChannel, PolarisSubChannel> readySubChannels = new HashMap<>();
+
+        subChannels.forEach((key, val) -> {
+            if (isReady(val)) {
+                attributeHolder.set(val.getAttributes());
+                readySubChannels.put(val, val);
+            }
+        });
+
+        return readySubChannels;
+    }
+
+
+    public static Map<String, String> collectLabels(Metadata headers, Predicate<String> predicate) {
+        Map<String, String> labels = new HashMap<>();
+
+        Metadata.AsciiMarshaller<String> marshaller = Metadata.ASCII_STRING_MARSHALLER;
+
+        Set<String> keys = headers.keys();
+        for (String key : keys) {
+            if (predicate.test(key)) {
+                Key<String> headerKey = Key.of(key, marshaller);
+                if (headers.containsKey(headerKey)) {
+                    labels.put(key.toLowerCase(), headers.get(headerKey));
+                }
             }
         }
-        return readySubChannels;
+
+        return labels;
     }
 }

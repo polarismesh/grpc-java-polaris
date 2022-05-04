@@ -1,0 +1,19 @@
+syntax = "proto3";
+option java_package = "com.tencent.polaris.grpc";
+
+
+message response{
+  string data = 1;
+}
+
+message request{
+  string msg = 1;
+}
+
+service Hello{
+  rpc  sayHello(request) returns (response);
+}
+
+service Hi{
+  rpc sayHi(request) returns (response);
+}

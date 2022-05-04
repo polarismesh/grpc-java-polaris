@@ -27,7 +27,7 @@ public class JvmShutdownHookUtilTest {
     
     @Test
     public void testAddHook() {
-        boolean result = JvmShutdownHookUtil.addHook(() -> {
+        boolean result = JvmHookHelper.addShutdownHook(() -> {
         });
         
         assertTrue(result);

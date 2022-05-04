@@ -14,20 +14,20 @@
  * the License.
  */
 
-package com.tencent.polaris.grpc.util;
+package com.tencent.polaris.grpc;
+
+import io.grpc.stub.StreamObserver;
 
 /**
  * @author lixiaoshuang
  */
-public class JvmShutdownHookUtil {
+public class HiProvider extends HiGrpc.HiImplBase {
     
-    /**
-     * Add JVM callback hooks.
-     *
-     * @param runnable Functional interface
-     */
-    public static boolean addHook(Runnable runnable) {
-        Runtime.getRuntime().addShutdownHook(new Thread(runnable));
-        return true;
+    @Override
+    public void sayHi(HelloPolaris.request request, StreamObserver<HelloPolaris.response> responseObserver) {
+        String msg = request.getMsg();
+        HelloPolaris.response response = HelloPolaris.response.newBuilder().setData(msg).build();
+        responseObserver.onNext(response);
+        responseObserver.onCompleted();
     }
 }

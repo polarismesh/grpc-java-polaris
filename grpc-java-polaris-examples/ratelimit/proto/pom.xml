@@ -11,6 +11,8 @@
     <modelVersion>4.0.0</modelVersion>
     
     <artifactId>ratelimit-proto</artifactId>
+    <name>gRPC Java Polaris RateLimit Example Proto</name>
+    <description>gRPC Java Polaris RateLimit Example Proto POM</description>
 
     <properties>
         <maven.compiler.source>8</maven.compiler.source>

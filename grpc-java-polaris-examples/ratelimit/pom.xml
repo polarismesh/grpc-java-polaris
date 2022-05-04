@@ -13,6 +13,9 @@
     <artifactId>ratelimit</artifactId>
     <packaging>pom</packaging>
 
+    <name>gRPC Java Polaris RateLimit Example</name>
+    <description>gRPC Java Polaris RateLimit Example POM</description>
+
     <properties>
         <maven.compiler.source>8</maven.compiler.source>
         <maven.compiler.target>8</maven.compiler.target>

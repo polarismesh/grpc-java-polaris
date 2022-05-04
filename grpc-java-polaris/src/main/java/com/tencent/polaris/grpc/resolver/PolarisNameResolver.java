@@ -16,10 +16,13 @@
 
 package com.tencent.polaris.grpc.resolver;
 
+import com.google.gson.Gson;
+import com.squareup.okhttp.Headers;
 import com.tencent.polaris.api.core.ConsumerAPI;
 import com.tencent.polaris.api.listener.ServiceListener;
 import com.tencent.polaris.api.pojo.Instance;
 import com.tencent.polaris.api.pojo.ServiceChangeEvent;
+import com.tencent.polaris.api.pojo.ServiceInfo;
 import com.tencent.polaris.api.pojo.ServiceInstances;
 import com.tencent.polaris.api.rpc.GetHealthyInstancesRequest;
 import com.tencent.polaris.api.rpc.InstancesResponse;
@@ -27,13 +30,18 @@ import com.tencent.polaris.api.rpc.UnWatchServiceRequest;
 import com.tencent.polaris.api.rpc.WatchServiceRequest;
 import com.tencent.polaris.client.api.SDKContext;
 import com.tencent.polaris.grpc.util.Common;
+import com.tencent.polaris.grpc.util.NetworkHelper;
 import io.grpc.Attributes;
 import io.grpc.EquivalentAddressGroup;
 import io.grpc.NameResolver;
+import io.netty.handler.codec.HeadersUtils;
 import java.net.InetSocketAddress;
 import java.net.URI;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -59,11 +67,22 @@ public class PolarisNameResolver extends NameResolver {
 
     private final SDKContext context;
 
+    private Listener2 listener;
+
+    private ServiceInfo sourceService;
+
     public PolarisNameResolver(URI targetUri, SDKContext context, ConsumerAPI consumerAPI) {
+        Map<String, String> params = NetworkHelper.getUrlParams(targetUri.getQuery());
+
         this.service = targetUri.getHost();
-        this.namespace = targetUri.getQuery() == null ? DEFAULT_NAMESPACE : targetUri.getQuery().split("=")[1];
+        this.namespace = params.get("namespace") == null ? DEFAULT_NAMESPACE : params.get("namespace");
         this.context = context;
         this.consumerAPI = consumerAPI;
+
+        if (params.containsKey("extend_info")) {
+            this.sourceService = new Gson().fromJson(new String(Base64.getUrlDecoder().decode(params.get("extend_info"))),
+                    ServiceInfo.class);
+        }
     }
 
     @Override
@@ -72,18 +91,19 @@ public class PolarisNameResolver extends NameResolver {
     }
 
     @Override
-    public void start(Listener listener) {
+    public void start(Listener2 listener) {
         GetHealthyInstancesRequest request = new GetHealthyInstancesRequest();
         request.setNamespace(namespace);
         request.setService(service);
         InstancesResponse response = consumerAPI.getHealthyInstancesInstance(request);
         LOG.info("namespace:{} service:{} instance size:{}", namespace, service,
                 response.getInstances().length);
+        this.listener = listener;
         notifyListener(listener, response);
         doWatch(listener);
     }
 
-    private void doWatch(Listener listener) {
+    private void doWatch(Listener2 listener) {
         this.watcher = new ServiceChangeWatcher(listener);
         this.consumerAPI.watchService(WatchServiceRequest.builder()
                 .namespace(namespace)
@@ -92,15 +112,24 @@ public class PolarisNameResolver extends NameResolver {
                 .build());
     }
 
-    private void notifyListener(Listener listener, InstancesResponse response) {
+    private void notifyListener(Listener2 listener, InstancesResponse response) {
         ServiceInstances serviceInstances = response.toServiceInstances();
-
         if (!serviceInstances.getInstances().isEmpty()) {
             List<EquivalentAddressGroup> equivalentAddressGroups = serviceInstances.getInstances()
                     .stream()
                     .map(this::buildEquivalentAddressGroup)
                     .collect(Collectors.toList());
-            listener.onAddresses(equivalentAddressGroups, Attributes.EMPTY);
+
+            Attributes.Builder builder = Attributes.newBuilder();
+
+            if (sourceService != null) {
+                builder.set(Common.SOURCE_SERVICE_INFO, sourceService);
+            }
+
+            listener.onResult(ResolutionResult.newBuilder()
+                            .setAddresses(equivalentAddressGroups)
+                            .setAttributes(builder.build())
+                    .build());
         }
     }
 
@@ -117,9 +146,9 @@ public class PolarisNameResolver extends NameResolver {
 
     private class ServiceChangeWatcher implements ServiceListener {
 
-        private final Listener listener;
+        private final Listener2 listener;
 
-        ServiceChangeWatcher(Listener listener) {
+        ServiceChangeWatcher(Listener2 listener) {
             this.listener = listener;
         }
 

@@ -7,6 +7,8 @@ import io.grpc.ClientStreamTracer.StreamInfo;
 import io.grpc.Metadata;
 
 /**
+ * Factory class for {@link ClientStreamTracer}.
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public class PolarisClientStreamTracerFactory extends Factory {

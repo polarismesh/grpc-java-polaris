@@ -18,7 +18,8 @@ package com.tencent.polaris.grpc.ratelimit;
 
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.client.api.SDKContext;
-import com.tencent.polaris.grpc.server.PolarisServerInterceptor;
+import com.tencent.polaris.grpc.interceptor.PolarisServerInterceptor;
+import com.tencent.polaris.grpc.util.GrpcHelper;
 import com.tencent.polaris.ratelimit.api.core.LimitAPI;
 import com.tencent.polaris.ratelimit.api.rpc.QuotaRequest;
 import com.tencent.polaris.ratelimit.api.rpc.QuotaResponse;
@@ -36,6 +37,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.BiFunction;
+import java.util.function.Predicate;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * gRPC-Server 端限流拦截器
@@ -44,11 +48,13 @@ import java.util.function.BiFunction;
  */
 public class PolarisRateLimitServerInterceptor extends PolarisServerInterceptor {
 
-    private static final String GRPC_SERVICE_LABEL_KEY = "grpc_service";
+    private static final Logger LOG = LoggerFactory.getLogger(PolarisRateLimitServerInterceptor.class);
+
+    private static final String GRPC_SERVICE_LABEL_KEY = "__grpc_service__";
 
     private LimitAPI limitAPI;
 
-    private String namespace = "";
+    private String namespace = "default";
 
     private String applicationName = "";
 
@@ -56,8 +62,18 @@ public class PolarisRateLimitServerInterceptor extends PolarisServerInterceptor 
 
     private Set<String> customLabels = Collections.emptySet();
 
-    private BiFunction<QuotaResponse, String, Status> rateLimitCallback = (quotaResponse, method) ->
-            Status.UNAVAILABLE.withDescription(quotaResponse.getInfo());
+    private BiFunction<QuotaResponse, String, Status> rateLimitCallback;
+
+    private Predicate<String> predicate = (key) -> {
+        if (key.startsWith(customKeyPrefix)) {
+            return true;
+        }
+        if (customLabels.contains(key)) {
+            return true;
+        }
+
+        return false;
+    };
 
     public PolarisRateLimitServerInterceptor() {
     }
@@ -75,7 +91,7 @@ public class PolarisRateLimitServerInterceptor extends PolarisServerInterceptor 
     }
 
     @Override
-    protected void init(final String namespace, final String applicationName, SDKContext context) {
+    public void init(final String namespace, final String applicationName, SDKContext context) {
         this.namespace = namespace;
         this.applicationName = applicationName;
         this.limitAPI = LimitAPIFactory.createLimitAPIByContext(context);
@@ -101,12 +117,15 @@ public class PolarisRateLimitServerInterceptor extends PolarisServerInterceptor 
         request.setCount(1);
         request.setLabels(labels);
 
+        LOG.debug("do get quota, request : {}", request);
+
         final QuotaResponse response = limitAPI.getQuota(request);
         if (Objects.equals(response.getCode(), QuotaResultCode.QuotaResultOk)) {
             return next.startCall(call, headers);
         }
 
-        call.close(rateLimitCallback.apply(response, call.getMethodDescriptor().getFullMethodName()), headers);
+        Status errStatus = rateLimitCallback.apply(response, call.getMethodDescriptor().getFullMethodName());
+        call.close(errStatus, headers);
         return new ServerCall.Listener<ReqT>() {};
     }
 
@@ -120,23 +139,7 @@ public class PolarisRateLimitServerInterceptor extends PolarisServerInterceptor 
             return labels;
         }
 
-        Set<String> keys = headers.keys();
-        for (String key : keys) {
-            Key<byte[]> headerKey = null;
-            if (key.startsWith(customKeyPrefix)) {
-                headerKey = Key.of(key, Metadata.BINARY_BYTE_MARSHALLER);
-            }
-            if (customLabels.contains(key)) {
-                headerKey = Key.of(key, Metadata.BINARY_BYTE_MARSHALLER);
-            }
-            if (headerKey == null) {
-                continue;
-            }
-
-            if (headers.containsKey(headerKey)) {
-                labels.put(key, new String(Objects.requireNonNull(headers.get(headerKey))));
-            }
-        }
+        labels = GrpcHelper.collectLabels(headers, predicate);
 
         return labels;
     }

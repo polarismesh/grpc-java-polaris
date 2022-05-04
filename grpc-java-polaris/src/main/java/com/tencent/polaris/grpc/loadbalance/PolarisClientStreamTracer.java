@@ -10,6 +10,10 @@ import io.grpc.Status;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
+ * grpc 调用的 tracer 信息，记录每次 grpc 调用的情况
+ * 1. 每次请求的相应时间
+ * 2. 每次请求的结果，记录成功或者失败
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public class PolarisClientStreamTracer extends ClientStreamTracer {
@@ -33,6 +37,9 @@ public class PolarisClientStreamTracer extends ClientStreamTracer {
         this.result.setService(callInfo.getTargetService());
     }
 
+    /**
+     * Stream is closed.  This will be called exactly once.
+     */
     @Override
     public void streamClosed(Status status) {
         if (!reported.compareAndSet(false, true)) {
@@ -46,6 +53,14 @@ public class PolarisClientStreamTracer extends ClientStreamTracer {
         this.info.getConsumerAPI().updateServiceCallResult(result);
     }
 
+    /**
+     * An inbound message has been fully read from the transport.
+     *
+     * @param seqNo the sequential number of the message within the stream, starting from 0.  It can
+     *              be used to correlate with {@link #inboundMessage(int)} for the same message.
+     * @param optionalWireSize the wire size of the message. -1 if unknown
+     * @param optionalUncompressedSize the uncompressed serialized size of the message. -1 if unknown
+     */
     @Override
     public void inboundMessageRead(int seqNo, long optionalWireSize, long optionalUncompressedSize) {
         if (!reported.compareAndSet(false, true)) {

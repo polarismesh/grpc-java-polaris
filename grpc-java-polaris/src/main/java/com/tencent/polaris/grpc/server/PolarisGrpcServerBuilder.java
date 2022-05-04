@@ -19,6 +19,7 @@ package com.tencent.polaris.grpc.server;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.client.api.SDKContext;
+import com.tencent.polaris.grpc.interceptor.PolarisServerInterceptor;
 import io.grpc.BindableService;
 import io.grpc.CompressorRegistry;
 import io.grpc.DecompressorRegistry;
@@ -110,7 +111,7 @@ public final class PolarisGrpcServerBuilder extends ServerBuilder<PolarisGrpcSer
      * @param metadata metadata
      * @return PolarisGrpcServerBuilder
      */
-    public PolarisGrpcServerBuilder metaData(Map<String, String> metadata) {
+    public PolarisGrpcServerBuilder metadata(Map<String, String> metadata) {
         this.metaData = metadata;
         return this;
     }
@@ -199,13 +200,13 @@ public final class PolarisGrpcServerBuilder extends ServerBuilder<PolarisGrpcSer
         checkField();
         for (PolarisServerInterceptor interceptor : polarisInterceptors) {
             interceptor.init(namespace, applicationName, context);
-            super.intercept(interceptor);
+            this.builder.intercept(interceptor);
         }
         for (ServerInterceptor interceptor : interceptors) {
-            super.intercept(interceptor);
+            this.builder.intercept(interceptor);
         }
 
-        return new PolarisGrpcServer(this, this.builder.build());
+        return new PolarisGrpcServer(this, context, this.builder.build());
     }
 
     private void checkField() {

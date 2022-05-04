@@ -19,6 +19,7 @@
     <modules>
         <module>quickstart-example</module>
         <module>ratelimit</module>
+        <module>router</module>
     </modules>
     
     <properties>

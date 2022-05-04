@@ -29,11 +29,11 @@ public class ServerMain {
 
     public static void main(String[] args) {
         Server polarisGrpcServer = PolarisGrpcServerBuilder
-                .forPort(50051)
+                .forPort(0)
                 //.host("127.0.0.1")
                 .namespace("default")
-                .applicationName("EchoServerGRPCJava")
-                .metaData(null)
+                .applicationName("RateLimitGRPCJava")
+                .metadata(null)
                 // 注入限流的 server 拦截器
                 .intercept(PolarisHelper.buildRateLimitInterceptor().build())
                 .ttl(5)

@@ -18,6 +18,7 @@ package com.tencent.polaris.grpc;
 
 import com.tencent.polaris.grpc.client.PolarisManagedChannelBuilder;
 import io.grpc.ManagedChannel;
+import java.util.concurrent.Executors;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -29,9 +30,10 @@ public class HelloConsumer {
     private ManagedChannel channel;
     
     public HelloConsumer() {
-        channel = PolarisManagedChannelBuilder.forTarget("polaris://EchoServerGRPCJava")
+        channel = PolarisManagedChannelBuilder.forTarget("polaris://RateLimitGRPCJava")
                 .usePlaintext()
-                .defaultLoadBalancingPolicy("")
+                .executor(Executors.newSingleThreadExecutor())
+                .offloadExecutor(Executors.newSingleThreadExecutor())
                 .build();
     }
     

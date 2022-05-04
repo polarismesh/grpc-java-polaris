@@ -27,13 +27,13 @@ public class IpUtilTest {
     
     @Test
     public void testGetLocalHostExactAddress() {
-        String localHost = IpUtil.getLocalHostExactAddress();
+        String localHost = NetworkHelper.getLocalHostExactAddress();
         assertNotNull(localHost);
     }
 
     @Test
     public void testGetLocalHost() {
-        String localHost = IpUtil.getLocalHost();
+        String localHost = NetworkHelper.getLocalHost();
         assertNotNull(localHost);
     }
 }

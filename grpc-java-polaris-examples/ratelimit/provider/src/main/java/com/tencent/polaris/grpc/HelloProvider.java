@@ -26,7 +26,7 @@ public class HelloProvider extends HelloGrpc.HelloImplBase {
     
     @Override
     public void sayHello(HelloPolaris.request request, StreamObserver<response> responseObserver) {
-        String msg = request.getMsg();
+        String msg = "Hello, I'm RateLimitGRPCJava Provider " + request.getMsg();
         HelloPolaris.response response = HelloPolaris.response.newBuilder().setData(msg).build();
         responseObserver.onNext(response);
         responseObserver.onCompleted();

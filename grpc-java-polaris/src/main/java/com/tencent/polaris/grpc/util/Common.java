@@ -17,6 +17,7 @@
 package com.tencent.polaris.grpc.util;
 
 import com.tencent.polaris.api.pojo.Instance;
+import com.tencent.polaris.api.pojo.ServiceInfo;
 import io.grpc.Attributes.Key;
 
 /**
@@ -24,10 +25,24 @@ import io.grpc.Attributes.Key;
  */
 public class Common {
 
+    /**
+     * {@link io.grpc.Attributes} 中存放 {@link Instance} 的 key
+     */
     public static final Key<Instance> INSTANCE_KEY = Key.create(Instance.class.getName());
 
-    public static final Key<String> TARGET_NAMESPACE_KEY = Key.create("POLARIS_SOURCE_NAMESPACE");
+    /**
+     *
+     */
+    public static final Key<ServiceInfo> SOURCE_SERVICE_INFO = Key.create(ServiceInfo.class.getName());
 
+    /**
+     * {@link io.grpc.Attributes} 中存放服务调用者的服务名称信息
+     */
     public static final Key<String> TARGET_SERVICE_KEY = Key.create("POLARIS_SOURCE_SERVICE");
+
+    /**
+     * {@link io.grpc.Attributes} 中存放服务调用者所在的命名空间信息
+     */
+    public static final Key<String> TARGET_NAMESPACE_KEY = Key.create("POLARIS_SOURCE_NAMESPACE");
 
 }

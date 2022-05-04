@@ -19,7 +19,6 @@ package com.tencent.polaris.grpc.resolver;
 import com.tencent.polaris.api.core.ConsumerAPI;
 import com.tencent.polaris.client.api.SDKContext;
 import com.tencent.polaris.factory.api.DiscoveryAPIFactory;
-import com.tencent.polaris.grpc.util.JvmShutdownHookUtil;
 import io.grpc.NameResolver;
 import io.grpc.NameResolverProvider;
 
