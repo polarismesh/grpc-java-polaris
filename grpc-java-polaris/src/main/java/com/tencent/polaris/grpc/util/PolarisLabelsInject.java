@@ -14,30 +14,33 @@
  * the License.
  */
 
-package com.tencent.polaris.grpc.loadbalance;
+package com.tencent.polaris.grpc.util;
 
-import com.tencent.polaris.grpc.util.ClientCallInfo;
-import io.grpc.ClientStreamTracer;
-import io.grpc.ClientStreamTracer.Factory;
-import io.grpc.ClientStreamTracer.StreamInfo;
 import io.grpc.Metadata;
 
+import java.util.Map;
+
 /**
- * Factory class for {@link ClientStreamTracer}.
+ * PolarisLabelsInject 针对每次流量的用户自定义标签注入
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public class PolarisClientStreamTracerFactory extends Factory {
+public interface PolarisLabelsInject {
 
-    private final ClientCallInfo callInfo;
+    /**
+     * 注入本次流量的路由标签信息
+     *
+     * @param metadata {@link Metadata}
+     * @return {@link Map<String, String>}
+     */
+    Map<String, String> injectRoutingLabels(Metadata metadata);
 
-    public PolarisClientStreamTracerFactory(final ClientCallInfo callInfo) {
-        super();
-        this.callInfo = callInfo;
-    }
+    /**
+     * 注入本次流量的限流标签信息
+     *
+     * @param metadata {@link Metadata}
+     * @return {@link Map<String, String>}
+     */
+    Map<String, String> injectRateLimitLabels(Metadata metadata);
 
-    @Override
-    public ClientStreamTracer newClientStreamTracer(StreamInfo info, Metadata headers) {
-        return new PolarisClientStreamTracer(info, headers, callInfo);
-    }
 }

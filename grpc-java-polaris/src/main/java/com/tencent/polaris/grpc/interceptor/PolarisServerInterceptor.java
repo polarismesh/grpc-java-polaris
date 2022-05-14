@@ -21,6 +21,8 @@ import com.tencent.polaris.grpc.server.PolarisGrpcServerBuilder;
 import io.grpc.ServerInterceptor;
 
 /**
+ * server 侧的拦截器, 优先级优于 ServerInterceptor
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public abstract class PolarisServerInterceptor implements ServerInterceptor {

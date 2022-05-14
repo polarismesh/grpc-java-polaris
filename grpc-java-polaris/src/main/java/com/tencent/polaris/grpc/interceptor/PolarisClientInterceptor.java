@@ -20,6 +20,8 @@ import com.tencent.polaris.client.api.SDKContext;
 import io.grpc.ClientInterceptor;
 
 /**
+ * client 侧的拦截器, 优先级优于 ClientInterceptor
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public abstract class PolarisClientInterceptor implements ClientInterceptor {

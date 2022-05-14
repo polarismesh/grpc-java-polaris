@@ -19,8 +19,12 @@ package com.tencent.polaris.grpc;
 import com.tencent.polaris.grpc.server.PolarisGrpcServerBuilder;
 
 import com.tencent.polaris.grpc.util.PolarisHelper;
+import com.tencent.polaris.ratelimit.api.rpc.QuotaResponse;
 import io.grpc.Server;
+import io.grpc.Status;
+
 import java.io.IOException;
+import java.util.function.BiFunction;
 
 /**
  * @author lixiaoshuang
@@ -33,7 +37,9 @@ public class ServerMain {
                 .namespace("default")
                 .applicationName("RateLimitServerGRPCJava")
                 // 注入限流的 server 拦截器
-                .intercept(PolarisHelper.buildRateLimitInterceptor().build())
+                .intercept(PolarisHelper.buildRateLimitInterceptor()
+                        .rateLimitCallback(callback)
+                        .build())
                 .ttl(5)
                 .addService(new HelloProvider())
                 .addService(new HiProvider())
@@ -46,4 +52,7 @@ public class ServerMain {
         }
 
     }
+
+    private static final BiFunction<QuotaResponse, String, Status> callback = (quotaResponse, s) ->
+            Status.ABORTED.withDescription("(Polaris) request exceeds the current limit");
 }
