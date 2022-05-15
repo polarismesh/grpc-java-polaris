@@ -16,12 +16,15 @@
 
 package com.tencent.polaris.grpc.loadbalance;
 
+import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.pojo.RetStatus;
 import com.tencent.polaris.api.rpc.ServiceCallResult;
 import com.tencent.polaris.grpc.util.ClientCallInfo;
 import io.grpc.ClientStreamTracer;
 import io.grpc.Metadata;
 import io.grpc.Status;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -33,6 +36,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public class PolarisClientStreamTracer extends ClientStreamTracer {
+
+    private static final Logger LOG = LoggerFactory.getLogger(PolarisClientStreamTracer.class);
 
     private final ClientCallInfo info;
 
@@ -66,7 +71,11 @@ public class PolarisClientStreamTracer extends ClientStreamTracer {
         this.result.setRetCode(status.getCode().value());
         this.result.setDelay(System.currentTimeMillis() - startTime);
 
-        this.info.getConsumerAPI().updateServiceCallResult(result);
+        try {
+            this.info.getConsumerAPI().updateServiceCallResult(result);
+        } catch (PolarisException e) {
+            LOG.error("do report invoke call ret fail in streamClosed", e);
+        }
     }
 
     /**
@@ -87,7 +96,11 @@ public class PolarisClientStreamTracer extends ClientStreamTracer {
         this.result.setRetCode(Status.OK.getCode().value());
         this.result.setDelay(System.currentTimeMillis() - startTime);
 
-        this.info.getConsumerAPI().updateServiceCallResult(result);
+        try {
+            this.info.getConsumerAPI().updateServiceCallResult(result);
+        } catch (PolarisException e) {
+            LOG.error("do report invoke call ret fail in inboundMessageRead", e);
+        }
     }
 
 

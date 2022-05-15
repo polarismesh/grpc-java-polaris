@@ -28,9 +28,9 @@ import com.tencent.polaris.api.rpc.GetOneInstanceRequest;
 import com.tencent.polaris.api.rpc.GetServiceRuleRequest;
 import com.tencent.polaris.api.rpc.InstancesResponse;
 import com.tencent.polaris.api.rpc.ServiceRuleResponse;
-import com.tencent.polaris.client.pb.RoutingProto.Destination;
 import com.tencent.polaris.client.pb.RoutingProto.Route;
 import com.tencent.polaris.client.pb.RoutingProto.Routing;
+import com.tencent.polaris.client.pb.RoutingProto.Source;
 import com.tencent.polaris.grpc.util.ClientCallInfo;
 import com.tencent.polaris.grpc.util.Common;
 import com.tencent.polaris.grpc.util.PolarisHelper;
@@ -141,8 +141,8 @@ public class PolarisPicker extends SubchannelPicker {
         Set<String> labelKeys = new HashSet<>();
 
         routes.forEach(route -> {
-            for (Destination destination : route.getDestinationsList()) {
-                labelKeys.addAll(destination.getMetadataMap().keySet());
+            for (Source source : route.getSourcesList()) {
+                labelKeys.addAll(source.getMetadataMap().keySet());
             }
         });
 
@@ -207,23 +207,20 @@ public class PolarisPicker extends SubchannelPicker {
 
         List<Route> doFilter() {
             List<Route> newRule = rule.stream().filter((Predicate<Route>) route -> {
-                for (Destination destination : route.getDestinationsList()) {
-                    if (Objects.isNull(destination) || destination.hasIsolate()) {
-                        continue;
-                    }
+                for (Source source : route.getSourcesList()) {
 
-                    if (Objects.equals(destination.getNamespace().getValue(), MATCH_ALL) &&
-                            Objects.equals(destination.getService().getValue(), MATCH_ALL)) {
+                    if (Objects.equals(source.getNamespace().getValue(), MATCH_ALL) &&
+                            Objects.equals(source.getService().getValue(), MATCH_ALL)) {
                         return true;
                     }
 
-                    if (Objects.equals(destination.getNamespace().getValue(), MATCH_ALL) &&
-                            Objects.equals(destination.getService().getValue(), serviceKey.getService())) {
+                    if (Objects.equals(source.getNamespace().getValue(), MATCH_ALL) &&
+                            Objects.equals(source.getService().getValue(), serviceKey.getService())) {
                         return true;
                     }
 
-                    if (Objects.equals(destination.getNamespace().getValue(), serviceKey.getNamespace()) &&
-                            Objects.equals(destination.getService().getValue(), serviceKey.getService())) {
+                    if (Objects.equals(source.getNamespace().getValue(), serviceKey.getNamespace()) &&
+                            Objects.equals(source.getService().getValue(), serviceKey.getService())) {
                         return true;
                     }
                 }

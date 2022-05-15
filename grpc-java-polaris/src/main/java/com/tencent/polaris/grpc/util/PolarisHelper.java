@@ -24,6 +24,7 @@ import io.grpc.Metadata.Key;
 import io.grpc.Status;
 
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Optional;
 import java.util.ServiceLoader;
@@ -44,7 +45,8 @@ public class PolarisHelper {
 
     static {
         ServiceLoader<PolarisLabelsInject> serviceLoader = ServiceLoader.load(PolarisLabelsInject.class);
-        LABELS_INJECT = Optional.ofNullable(serviceLoader.iterator().next()).orElse(new PolarisLabelsInject() {
+        Iterator<PolarisLabelsInject> iterator = serviceLoader.iterator();
+        LABELS_INJECT = Optional.ofNullable(iterator.hasNext() ? iterator.next() : null).orElse(new PolarisLabelsInject() {
             @Override
             public Map<String, String> injectRoutingLabels(Metadata metadata) {
                 return Collections.emptyMap();
