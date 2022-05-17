@@ -16,10 +16,18 @@
 
 package com.tencent.polaris.grpc.ratelimit;
 
+import com.tencent.polaris.api.core.ConsumerAPI;
+import com.tencent.polaris.api.pojo.ServiceEventKey.EventType;
+import com.tencent.polaris.api.pojo.ServiceKey;
+import com.tencent.polaris.api.rpc.GetServiceRuleRequest;
+import com.tencent.polaris.api.rpc.ServiceRuleResponse;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.client.api.SDKContext;
+import com.tencent.polaris.client.pb.RateLimitProto.RateLimit;
+import com.tencent.polaris.client.pb.RateLimitProto.Rule;
+import com.tencent.polaris.factory.api.DiscoveryAPIFactory;
 import com.tencent.polaris.grpc.interceptor.PolarisServerInterceptor;
-import com.tencent.polaris.grpc.util.GrpcHelper;
+import com.tencent.polaris.grpc.util.PolarisHelper;
 import com.tencent.polaris.ratelimit.api.core.LimitAPI;
 import com.tencent.polaris.ratelimit.api.rpc.QuotaRequest;
 import com.tencent.polaris.ratelimit.api.rpc.QuotaResponse;
@@ -30,13 +38,16 @@ import io.grpc.ServerCall;
 import io.grpc.ServerCall.Listener;
 import io.grpc.ServerCallHandler;
 import io.grpc.Status;
+
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.BiFunction;
-import java.util.function.Predicate;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,40 +60,17 @@ public class PolarisRateLimitServerInterceptor extends PolarisServerInterceptor 
 
     private static final Logger LOG = LoggerFactory.getLogger(PolarisRateLimitServerInterceptor.class);
 
-    private static final String GRPC_SERVICE_LABEL_KEY = "__grpc_service__";
-
     private LimitAPI limitAPI;
+
+    private ConsumerAPI consumerAPI;
 
     private String namespace = "default";
 
     private String applicationName = "";
 
-    private String customKeyPrefix = "";
-
-    private Set<String> customLabels = Collections.emptySet();
-
     private BiFunction<QuotaResponse, String, Status> rateLimitCallback;
 
-    private Predicate<String> predicate = (key) -> {
-        if (key.startsWith(customKeyPrefix)) {
-            return true;
-        }
-        if (customLabels.contains(key)) {
-            return true;
-        }
-
-        return false;
-    };
-
     public PolarisRateLimitServerInterceptor() {
-    }
-
-    public void setCustomKeyPrefix(String customKeyPrefix) {
-        this.customKeyPrefix = customKeyPrefix;
-    }
-
-    public void setCustomLabels(Set<String> customLabels) {
-        this.customLabels = customLabels;
     }
 
     public void setRateLimitCallback(BiFunction<QuotaResponse, String, Status> rateLimitCallback) {
@@ -94,29 +82,26 @@ public class PolarisRateLimitServerInterceptor extends PolarisServerInterceptor 
         this.namespace = namespace;
         this.applicationName = applicationName;
         this.limitAPI = LimitAPIFactory.createLimitAPIByContext(context);
+        this.consumerAPI = DiscoveryAPIFactory.createConsumerAPIByContext(context);
     }
 
     @Override
     public <ReqT, RespT> Listener<ReqT> interceptCall(ServerCall<ReqT, RespT> call, Metadata headers,
-            ServerCallHandler<ReqT, RespT> next) {
+                                                      ServerCallHandler<ReqT, RespT> next) {
         final String applicationName = this.applicationName;
-        final String serviceName = call.getMethodDescriptor().getServiceName();
+        final String serviceName = StringUtils.isBlank(applicationName) ? call.getMethodDescriptor().getServiceName() : applicationName;
         final String method = call.getMethodDescriptor().getBareMethodName();
-        final Map<String, String> labels = collectLabels(headers);
 
         final QuotaRequest request = new QuotaRequest();
         request.setNamespace(namespace);
-        if (StringUtils.isNotBlank(applicationName)) {
-            request.setService(applicationName);
-            labels.put(GRPC_SERVICE_LABEL_KEY, serviceName);
-        } else {
-            request.setService(serviceName);
-        }
+        request.setService(serviceName);
         request.setMethod(method);
         request.setCount(1);
+
+        final Map<String, String> labels = collectLabels(loadRateLimitRule(new ServiceKey(namespace, serviceName)), headers);
         request.setLabels(labels);
 
-        LOG.debug("do get quota, request : {}", request);
+        LOG.debug("do acquire rate-limit quota, request : {}", request);
 
         final QuotaResponse response = limitAPI.getQuota(request);
         if (Objects.equals(response.getCode(), QuotaResultCode.QuotaResultOk)) {
@@ -128,20 +113,50 @@ public class PolarisRateLimitServerInterceptor extends PolarisServerInterceptor 
         return new ServerCall.Listener<ReqT>() {};
     }
 
-    private Map<String, String> collectLabels(Metadata headers) {
-        Map<String, String> labels = new HashMap<>();
+    private Map<String, String> collectLabels(RateLimitResp rateLimitResp, Metadata headers) {
+        Map<String, String> finalLabels = new HashMap<>();
 
-        boolean hasPrefix = StringUtils.isNotBlank(customKeyPrefix);
-        boolean hasCustomLabels = customLabels.isEmpty();
+        List<Rule> routes = rateLimitResp.rules;
 
-        if (!hasPrefix || !hasCustomLabels) {
-            return labels;
-        }
+        Set<String> labelKeys = new HashSet<>();
 
-        labels = GrpcHelper.collectLabels(headers, predicate);
+        routes.forEach(rule -> {
+            if (rule.hasDisable()) {
+                return;
+            }
+            labelKeys.addAll(rule.getLabelsMap().keySet());
+        });
 
-        return labels;
+        PolarisHelper.autoCollectLabels(headers, finalLabels, labelKeys);
+
+        Map<String, String> customerLabels = PolarisHelper.getLabelsInject().injectRateLimitLabels(headers);
+        finalLabels.putAll(customerLabels);
+        return finalLabels;
     }
 
+    private RateLimitResp loadRateLimitRule(ServiceKey target) {
+        GetServiceRuleRequest inBoundReq = new GetServiceRuleRequest();
+        inBoundReq.setService(target.getService());
+        inBoundReq.setNamespace(target.getNamespace());
+        inBoundReq.setRuleType(EventType.RATE_LIMITING);
+
+        ServiceRuleResponse inBoundResp = consumerAPI.getServiceRule(inBoundReq);
+        RateLimit inBoundRule = (RateLimit) inBoundResp.getServiceRule().getRule();
+        if (Objects.nonNull(inBoundRule)) {
+            return new RateLimitResp(inBoundRule.getRulesList(), target);
+        }
+        return new RateLimitResp(Collections.emptyList(), null);
+    }
+
+    private static class RateLimitResp {
+        final List<Rule> rules;
+        final ServiceKey serviceKey;
+
+        private RateLimitResp(List<Rule> rules, ServiceKey serviceKey) {
+            this.rules = rules;
+            this.serviceKey = serviceKey;
+        }
+
+    }
 
 }

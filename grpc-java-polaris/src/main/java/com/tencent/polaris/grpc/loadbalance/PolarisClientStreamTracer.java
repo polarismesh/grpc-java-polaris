@@ -1,11 +1,30 @@
+/*
+ * Tencent is pleased to support the open source community by making Polaris available.
+ *
+ * Copyright (C) 2019 THL A29 Limited, a Tencent company. All rights reserved.
+ *
+ * Licensed under the BSD 3-Clause License (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ *
+ * https://opensource.org/licenses/BSD-3-Clause
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
+ */
+
 package com.tencent.polaris.grpc.loadbalance;
 
+import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.pojo.RetStatus;
 import com.tencent.polaris.api.rpc.ServiceCallResult;
 import com.tencent.polaris.grpc.util.ClientCallInfo;
 import io.grpc.ClientStreamTracer;
 import io.grpc.Metadata;
 import io.grpc.Status;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -17,6 +36,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public class PolarisClientStreamTracer extends ClientStreamTracer {
+
+    private static final Logger LOG = LoggerFactory.getLogger(PolarisClientStreamTracer.class);
 
     private final ClientCallInfo info;
 
@@ -50,7 +71,11 @@ public class PolarisClientStreamTracer extends ClientStreamTracer {
         this.result.setRetCode(status.getCode().value());
         this.result.setDelay(System.currentTimeMillis() - startTime);
 
-        this.info.getConsumerAPI().updateServiceCallResult(result);
+        try {
+            this.info.getConsumerAPI().updateServiceCallResult(result);
+        } catch (PolarisException e) {
+            LOG.error("do report invoke call ret fail in streamClosed", e);
+        }
     }
 
     /**
@@ -71,7 +96,11 @@ public class PolarisClientStreamTracer extends ClientStreamTracer {
         this.result.setRetCode(Status.OK.getCode().value());
         this.result.setDelay(System.currentTimeMillis() - startTime);
 
-        this.info.getConsumerAPI().updateServiceCallResult(result);
+        try {
+            this.info.getConsumerAPI().updateServiceCallResult(result);
+        } catch (PolarisException e) {
+            LOG.error("do report invoke call ret fail in inboundMessageRead", e);
+        }
     }
 
 

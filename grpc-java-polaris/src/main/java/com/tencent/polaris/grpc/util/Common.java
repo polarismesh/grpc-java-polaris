@@ -25,6 +25,10 @@ import io.grpc.Attributes.Key;
  */
 public class Common {
 
+    public static final int GRPC_HEADER_PREFIX_LEN = "grpc.header.".length();
+
+    public static final int GRPC_CONTEXT_PREFIX_LEN = "ctx.header.".length();
+
     /**
      * {@link io.grpc.Attributes} 中存放 {@link Instance} 的 key
      */

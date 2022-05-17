@@ -20,29 +20,31 @@
         <mockito-core.version>4.1.0</mockito-core.version>
     </properties>
 
-    <dependencyManagement>
-        <dependencies>
-            <dependency>
-                <artifactId>polaris-dependencies</artifactId>
-                <groupId>com.tencent.polaris</groupId>
-                <version>${polaris-dependencies.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-        </dependencies>
-    </dependencyManagement>
+<!--    <dependencyManagement>-->
+<!--        <dependencies>-->
+<!--            <dependency>-->
+<!--                <artifactId>polaris-dependencies</artifactId>-->
+<!--                <groupId>com.tencent.polaris</groupId>-->
+<!--                <version>${polaris-dependencies.version}</version>-->
+<!--                <type>pom</type>-->
+<!--                <scope>import</scope>-->
+<!--            </dependency>-->
+<!--        </dependencies>-->
+<!--    </dependencyManagement>-->
 
     <dependencies>
         <dependency>
+<!--            <groupId>com.tencent.polaris</groupId>-->
+<!--            <artifactId>polaris-factory</artifactId>-->
+<!--            <version>${polaris-dependencies.version}</version>-->
+<!--            <exclusions>-->
+<!--                <exclusion>-->
+<!--                    <groupId>io.grpc</groupId>-->
+<!--                    <artifactId>grpc-all</artifactId>-->
+<!--                </exclusion>-->
+<!--            </exclusions>-->
             <groupId>com.tencent.polaris</groupId>
-            <artifactId>polaris-factory</artifactId>
-            <version>${polaris-dependencies.version}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>io.grpc</groupId>
-                    <artifactId>grpc-all</artifactId>
-                </exclusion>
-            </exclusions>
+            <artifactId>polaris-all</artifactId>
         </dependency>
         <dependency>
             <groupId>io.grpc</groupId>
