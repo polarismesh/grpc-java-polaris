@@ -19,7 +19,6 @@ package com.tencent.polaris.grpc.client;
 
 import static com.tencent.polaris.grpc.loadbalance.PolarisLoadBalancerProvider.LOADBALANCER_PROVIDER;
 
-import com.google.gson.Gson;
 import com.tencent.polaris.api.pojo.ServiceInfo;
 import com.tencent.polaris.client.api.SDKContext;
 import com.tencent.polaris.grpc.interceptor.PolarisClientInterceptor;
@@ -44,6 +43,7 @@ import java.util.Objects;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import javax.annotation.Nullable;
+import shade.polaris.com.google.gson.Gson;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
