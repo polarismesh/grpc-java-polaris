@@ -19,6 +19,7 @@ package com.tencent.polaris.grpc.client;
 
 import static com.tencent.polaris.grpc.loadbalance.PolarisLoadBalancerProvider.LOADBALANCER_PROVIDER;
 
+import com.google.gson.Gson;
 import com.tencent.polaris.api.pojo.ServiceInfo;
 import com.tencent.polaris.client.api.SDKContext;
 import com.tencent.polaris.grpc.interceptor.PolarisClientInterceptor;
@@ -33,7 +34,6 @@ import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.NameResolver.Factory;
 import io.grpc.ProxyDetector;
-import shade.polaris.com.google.gson.Gson;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;

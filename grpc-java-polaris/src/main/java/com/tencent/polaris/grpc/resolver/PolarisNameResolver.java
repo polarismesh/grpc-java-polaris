@@ -16,6 +16,7 @@
 
 package com.tencent.polaris.grpc.resolver;
 
+import com.google.gson.Gson;
 import com.tencent.polaris.api.core.ConsumerAPI;
 import com.tencent.polaris.api.listener.ServiceListener;
 import com.tencent.polaris.api.pojo.Instance;
@@ -41,7 +42,6 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import shade.polaris.com.google.gson.Gson;
 
 /**
  * Service discovery class
