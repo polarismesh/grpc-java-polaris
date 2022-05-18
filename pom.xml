@@ -45,11 +45,15 @@
     </modules>
     
     <properties>
-        <revision>1.0.0-SNAPSHOT</revision>
+        <revision>1.1.0</revision>
         <skip.maven.deploy>false</skip.maven.deploy>
         <maven.compiler.source>8</maven.compiler.source>
         <maven.compiler.target>8</maven.compiler.target>
-        <polaris-dependencies.version>1.2.3-SNAPSHOT</polaris-dependencies.version>
+        <guava.version>31.1-jre</guava.version>
+        <slf4j-api.version>1.7.32</slf4j-api.version>
+        <junit-jupiter.version>RELEASE</junit-jupiter.version>
+        <grpc.version>1.42.1</grpc.version>
+        <polaris-dependencies.version>1.6.0-SNAPSHOT</polaris-dependencies.version>
         <maven.jar.plugin.version>3.0.0</maven.jar.plugin.version>
         <maven.source.plugin.version>3.2.0</maven.source.plugin.version>
         <maven.javadoc.plugin.version>3.2.0</maven.javadoc.plugin.version>

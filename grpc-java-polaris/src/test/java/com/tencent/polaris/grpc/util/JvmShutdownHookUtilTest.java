@@ -16,13 +16,9 @@
 
 package com.tencent.polaris.grpc.util;
 
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author lixiaoshuang
@@ -31,7 +27,7 @@ public class JvmShutdownHookUtilTest {
     
     @Test
     public void testAddHook() {
-        boolean result = JvmShutdownHookUtil.addHook(() -> {
+        boolean result = JvmHookHelper.addShutdownHook(() -> {
         });
         
         assertTrue(result);

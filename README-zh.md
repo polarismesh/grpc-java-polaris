@@ -43,18 +43,17 @@ mvn clean install -U -Dmaven.test.skip=true
 PolarisGrpcServer polarisGrpcServer = PolarisGrpcServer.builder()
         .port(50051)
         .namespace("default")
-        .serviceName("grpc-demo-java")
-        .metaData(null)
+        .applicationName("grpc-demo-java")
+        .metadata(null)
         .bindableServices(services)
         .build();
         
 polarisGrpcServer.start();
 ```
 
-客户端使用时需要将 `PolarisNameResolverProvider` 注册到 `NameResolverRegistry` 中，来提供服务发现功能：
+客户端使用时需要将 `ManagedChannelBuilder` 替换为 `PolarisManagedChannelBuilder`：
 ```
-NameResolverRegistry.getDefaultRegistry().register(new PolarisNameResolverProvider());
-ManagedChannel channel = ManagedChannelBuilder.forTarget("polaris://grpc-demo-java:8080?namespace=default")
+ManagedChannel channel = PolarisManagedChannelBuilder.forTarget("polaris://grpc-demo-java:8080?namespace=default")
         .usePlaintext().build();
 ```
 

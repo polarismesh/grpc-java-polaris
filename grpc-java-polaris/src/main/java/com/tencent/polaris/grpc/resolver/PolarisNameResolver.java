@@ -17,21 +17,31 @@
 package com.tencent.polaris.grpc.resolver;
 
 import com.tencent.polaris.api.core.ConsumerAPI;
+import com.tencent.polaris.api.listener.ServiceListener;
 import com.tencent.polaris.api.pojo.Instance;
-import com.tencent.polaris.api.rpc.GetInstancesRequest;
+import com.tencent.polaris.api.pojo.ServiceChangeEvent;
+import com.tencent.polaris.api.pojo.ServiceInfo;
+import com.tencent.polaris.api.pojo.ServiceInstances;
+import com.tencent.polaris.api.rpc.GetHealthyInstancesRequest;
 import com.tencent.polaris.api.rpc.InstancesResponse;
+import com.tencent.polaris.api.rpc.UnWatchServiceRequest;
+import com.tencent.polaris.api.rpc.WatchServiceRequest;
+import com.tencent.polaris.client.api.SDKContext;
+import com.tencent.polaris.grpc.util.Common;
+import com.tencent.polaris.grpc.util.NetworkHelper;
 import io.grpc.Attributes;
 import io.grpc.EquivalentAddressGroup;
 import io.grpc.NameResolver;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.net.InetSocketAddress;
 import java.net.URI;
-import java.util.Arrays;
+import java.util.Base64;
+import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
+import java.util.Map;
 import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import shade.polaris.com.google.gson.Gson;
 
 /**
  * Service discovery class
@@ -39,49 +49,128 @@ import java.util.stream.Collectors;
  * @author lixiaoshuang
  */
 public class PolarisNameResolver extends NameResolver {
-    
-    private final Logger log = LoggerFactory.getLogger(PolarisNameResolver.class);
-    
-    private final ConsumerAPI consumerAPI;
-    
-    private final String namespace;
-    
-    private final String service;
-    
+
+    private static final Logger LOG = LoggerFactory.getLogger(PolarisNameResolver.class);
+
     private static final String DEFAULT_NAMESPACE = "default";
-    
-    
-    public PolarisNameResolver(URI targetUri, ConsumerAPI consumerAPI) {
+
+    private final ConsumerAPI consumerAPI;
+
+    private final String namespace;
+
+    private final String service;
+
+    private ServiceChangeWatcher watcher;
+
+    private final SDKContext context;
+
+    private Listener2 listener;
+
+    private ServiceInfo sourceService;
+
+    public PolarisNameResolver(URI targetUri, SDKContext context, ConsumerAPI consumerAPI) {
+        Map<String, String> params = NetworkHelper.getUrlParams(targetUri.getQuery());
+
         this.service = targetUri.getHost();
-        this.namespace = targetUri.getQuery() == null ? DEFAULT_NAMESPACE : targetUri.getQuery().split("=")[1];
+        this.namespace = params.get("namespace") == null ? DEFAULT_NAMESPACE : params.get("namespace");
+        this.context = context;
         this.consumerAPI = consumerAPI;
+
+        if (params.containsKey("extend_info")) {
+            this.sourceService = new Gson().fromJson(new String(Base64.getUrlDecoder().decode(params.get("extend_info"))),
+                    ServiceInfo.class);
+        }
     }
-    
+
     @Override
     public String getServiceAuthority() {
         return service;
     }
-    
+
     @Override
-    public void start(Listener listener) {
-        GetInstancesRequest request = new GetInstancesRequest();
+    public void start(Listener2 listener) {
+        GetHealthyInstancesRequest request = new GetHealthyInstancesRequest();
         request.setNamespace(namespace);
         request.setService(service);
-        InstancesResponse response = consumerAPI.getInstances(request);
-        log.debug("getInstances response:{}", response);
-        List<EquivalentAddressGroup> equivalentAddressGroups = null;
-        if (Objects.nonNull(response)) {
-            equivalentAddressGroups = Arrays.stream(response.getInstances()).filter(Instance::isHealthy)
-                    .map(instance -> new EquivalentAddressGroup(
-                            new InetSocketAddress(instance.getHost(), instance.getPort())))
-                    .collect(Collectors.toList());
-        }
-        listener.onAddresses(equivalentAddressGroups, Attributes.EMPTY);
+        InstancesResponse response = consumerAPI.getHealthyInstancesInstance(request);
+        LOG.info("namespace:{} service:{} instance size:{}", namespace, service,
+                response.getInstances().length);
+        this.listener = listener;
+        notifyListener(listener, response);
+        doWatch(listener);
     }
-    
+
+    private void doWatch(Listener2 listener) {
+        this.watcher = new ServiceChangeWatcher(listener);
+        this.consumerAPI.watchService(WatchServiceRequest.builder()
+                .namespace(namespace)
+                .service(service)
+                .listeners(Collections.singletonList(this.watcher))
+                .build());
+    }
+
+    private void notifyListener(Listener2 listener, InstancesResponse response) {
+        ServiceInstances serviceInstances = response.toServiceInstances();
+        if (!serviceInstances.getInstances().isEmpty()) {
+            List<EquivalentAddressGroup> equivalentAddressGroups = serviceInstances.getInstances()
+                    .stream()
+                    .map(this::buildEquivalentAddressGroup)
+                    .collect(Collectors.toList());
+
+            Attributes.Builder builder = Attributes.newBuilder();
+
+            if (sourceService != null) {
+                builder.set(Common.SOURCE_SERVICE_INFO, sourceService);
+            }
+
+            listener.onResult(ResolutionResult.newBuilder()
+                            .setAddresses(equivalentAddressGroups)
+                            .setAttributes(builder.build())
+                    .build());
+        }
+    }
+
     @Override
     public void shutdown() {
-    
+        if (this.watcher != null) {
+            this.consumerAPI.unWatchService(UnWatchServiceRequest.UnWatchServiceRequestBuilder.anUnWatchServiceRequest()
+                    .listeners(Collections.singletonList(this.watcher))
+                    .namespace(namespace)
+                    .service(service)
+                    .build());
+        }
     }
-    
+
+    private class ServiceChangeWatcher implements ServiceListener {
+
+        private final Listener2 listener;
+
+        ServiceChangeWatcher(Listener2 listener) {
+            this.listener = listener;
+        }
+
+        @Override
+        public void onEvent(ServiceChangeEvent event) {
+            LOG.info("receive:{} service:{} final instance size:{}", namespace, service,
+                    event.getAllInstances().size());
+
+            GetHealthyInstancesRequest request = new GetHealthyInstancesRequest();
+            request.setNamespace(namespace);
+            request.setService(service);
+            InstancesResponse response = consumerAPI.getHealthyInstancesInstance(request);
+            notifyListener(listener, response);
+        }
+
+    }
+
+    private EquivalentAddressGroup buildEquivalentAddressGroup(Instance instance) {
+        InetSocketAddress address = new InetSocketAddress(instance.getHost(), instance.getPort());
+        Attributes attributes = Attributes.newBuilder()
+                .set(Common.INSTANCE_KEY, instance)
+                .set(Common.TARGET_NAMESPACE_KEY, namespace)
+                .set(Common.TARGET_SERVICE_KEY, service)
+                .build();
+        return new EquivalentAddressGroup(address, attributes);
+    }
+
 }

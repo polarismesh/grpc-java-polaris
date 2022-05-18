@@ -28,11 +28,10 @@ public class ServerMain {
 
     public static void main(String[] args) {
         Server polarisGrpcServer = PolarisGrpcServerBuilder
-                .forPort(50051)
-                //.host("127.0.0.1")
+                .forPort(0)
                 .namespace("default")
-                .applicationName("EchoServerGRPCJava")
-                .metaData(null)
+                .applicationName("DiscoverServerGRPCJava")
+                .metadata(null)
                 .ttl(5)
                 .addService(new HelloProvider())
                 .addService(new HiProvider())

@@ -16,40 +16,32 @@
 
 package com.tencent.polaris.grpc.resolver;
 
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+
 import com.tencent.polaris.api.core.ConsumerAPI;
-import io.grpc.Attributes;
+import com.tencent.polaris.client.api.SDKContext;
 import io.grpc.NameResolver;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.net.URI;
 import java.net.URISyntaxException;
 
-import static org.junit.Assert.*;
-
 /**
  * @author lixiaoshuang
  */
-@RunWith(MockitoJUnitRunner.class)
 public class PolarisNameResolverTest {
     
     private PolarisNameResolver polarisNameResolver;
-    
-    @Mock
+
     private ConsumerAPI consumerAPI;
-    
-    @Mock
+
     private NameResolver.Listener listener;
-    
-    
-    @Before
+
+    @BeforeEach
     public void setUp() throws URISyntaxException {
         URI targetUri = new URI("polaris://grpc-demo-java?namespace=default");
-        polarisNameResolver = new PolarisNameResolver(targetUri, consumerAPI);
+        polarisNameResolver = new PolarisNameResolver(targetUri, SDKContext.initContext(), consumerAPI);
     }
     
     @Test
@@ -57,10 +49,5 @@ public class PolarisNameResolverTest {
         String serviceAuthority = polarisNameResolver.getServiceAuthority();
         assertNotNull(serviceAuthority);
     }
-    
-    @Test
-    public void testStart() {
-        polarisNameResolver.start(listener);
-        Mockito.verify(listener).onAddresses(null, Attributes.EMPTY);
-    }
+
 }

@@ -16,6 +16,7 @@
 
 package com.tencent.polaris.grpc;
 
+import com.tencent.polaris.grpc.client.PolarisManagedChannelBuilder;
 import com.tencent.polaris.grpc.resolver.PolarisNameResolverProvider;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
@@ -30,8 +31,7 @@ public class HiConsumer {
     
     public static void main(String[] args) {
         
-        NameResolverRegistry.getDefaultRegistry().register(new PolarisNameResolverProvider());
-        ManagedChannel channel = ManagedChannelBuilder.forTarget("polaris://grpc-demo-java").usePlaintext()
+        ManagedChannel channel = PolarisManagedChannelBuilder.forTarget("polaris://DiscoverServerGRPCJava").usePlaintext()
                 .build();
         
         HiGrpc.HiBlockingStub hiBlockingStub = HiGrpc.newBlockingStub(channel);

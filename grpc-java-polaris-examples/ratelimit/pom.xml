@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <parent>
+        <artifactId>grpc-java-polaris-examples</artifactId>
+        <groupId>com.tencent.polaris</groupId>
+        <version>${revision}</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+
+    <artifactId>ratelimit</artifactId>
+    <packaging>pom</packaging>
+
+    <name>gRPC Java Polaris RateLimit Example</name>
+    <description>gRPC Java Polaris RateLimit Example POM</description>
+
+    <properties>
+        <maven.compiler.source>8</maven.compiler.source>
+        <maven.compiler.target>8</maven.compiler.target>
+    </properties>
+
+    <modules>
+        <module>provider</module>
+        <module>consumer</module>
+        <module>proto</module>
+    </modules>
+
+</project>

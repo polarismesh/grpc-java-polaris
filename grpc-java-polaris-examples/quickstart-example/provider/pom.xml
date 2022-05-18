@@ -24,7 +24,7 @@
         <dependency>
             <groupId>com.tencent.polaris</groupId>
             <artifactId>quickstart-proto</artifactId>
-            <version>1.0.0-SNAPSHOT</version>
+            <version>${grpc-java-polaris.version}</version>
         </dependency>
     </dependencies>
     

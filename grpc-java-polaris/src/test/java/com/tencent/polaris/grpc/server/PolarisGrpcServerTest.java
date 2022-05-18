@@ -16,10 +16,11 @@
 
 package com.tencent.polaris.grpc.server;
 
-import io.grpc.Server;
-import org.junit.Test;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-import static org.junit.Assert.*;
+import io.grpc.Server;
+import org.junit.jupiter.api.Test;
+
 
 /**
  * @author lixiaoshuang

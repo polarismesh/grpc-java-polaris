@@ -37,7 +37,7 @@ public class ConsumerServer {
     
     public static void main(String[] args) throws IOException {
         HttpServer httpServer = HttpServer.create(new InetSocketAddress(40041), 0);
-        httpServer.createContext("/polaris/grpc/quickstart/consumer", new ConsumerHttpHandler());
+        httpServer.createContext("/echo", new ConsumerHttpHandler());
         httpServer.setExecutor(Executors.newFixedThreadPool(10));
         httpServer.start();
         log.info("http server start on port 40041");

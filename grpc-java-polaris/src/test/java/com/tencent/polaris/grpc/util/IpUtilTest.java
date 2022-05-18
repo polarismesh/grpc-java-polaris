@@ -16,9 +16,9 @@
 
 package com.tencent.polaris.grpc.util;
 
-import org.junit.Test;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-import static org.junit.Assert.*;
+import org.junit.jupiter.api.Test;
 
 /**
  * @author lixiaoshuang
@@ -27,13 +27,13 @@ public class IpUtilTest {
     
     @Test
     public void testGetLocalHostExactAddress() {
-        String localHost = IpUtil.getLocalHostExactAddress();
+        String localHost = NetworkHelper.getLocalHostExactAddress();
         assertNotNull(localHost);
     }
-    
+
     @Test
     public void testGetLocalHost() {
-        String localHost = IpUtil.getLocalHost();
+        String localHost = NetworkHelper.getLocalHost();
         assertNotNull(localHost);
     }
 }
