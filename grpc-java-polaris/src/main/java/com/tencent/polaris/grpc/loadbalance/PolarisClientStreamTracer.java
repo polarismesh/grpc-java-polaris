@@ -74,7 +74,7 @@ public class PolarisClientStreamTracer extends ClientStreamTracer {
         try {
             this.info.getConsumerAPI().updateServiceCallResult(result);
         } catch (PolarisException e) {
-            LOG.error("do report invoke call ret fail in streamClosed", e);
+            LOG.error("[grpc-polaris] do report invoke call ret fail in streamClosed", e);
         }
     }
 
@@ -99,7 +99,7 @@ public class PolarisClientStreamTracer extends ClientStreamTracer {
         try {
             this.info.getConsumerAPI().updateServiceCallResult(result);
         } catch (PolarisException e) {
-            LOG.error("do report invoke call ret fail in inboundMessageRead", e);
+            LOG.error("[grpc-polaris] do report invoke call ret fail in inboundMessageRead", e);
         }
     }
 

@@ -17,8 +17,10 @@
 package com.tencent.polaris.grpc.resolver;
 
 import com.tencent.polaris.api.core.ConsumerAPI;
+import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.client.api.SDKContext;
 import com.tencent.polaris.factory.api.DiscoveryAPIFactory;
+import com.tencent.polaris.grpc.exception.PolarisGrpcException;
 import io.grpc.NameResolver;
 import io.grpc.NameResolverProvider;
 
@@ -35,7 +37,7 @@ import org.slf4j.LoggerFactory;
  */
 public class PolarisNameResolverProvider extends NameResolverProvider {
     
-    private final Logger log = LoggerFactory.getLogger(PolarisNameResolverProvider.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(PolarisNameResolverProvider.class);
     
     private static final int DEFAULT_PRIORITY = 5;
     
@@ -61,16 +63,16 @@ public class PolarisNameResolverProvider extends NameResolverProvider {
      */
     @Override
     public NameResolver newNameResolver(URI targetUri, NameResolver.Args args) {
-        if (DEFAULT_SCHEME.equals(targetUri.getScheme())) {
-            Pattern pattern = Pattern.compile(PATTERN);
-            Matcher matcher = pattern.matcher(targetUri.toString());
-            if (!matcher.matches()) {
-                log.error("target format is wrong,reference: polaris://[serviceName]");
-                return null;
-            }
-            return new PolarisNameResolver(targetUri, context, consumerAPI);
+        if (!DEFAULT_SCHEME.equals(targetUri.getScheme())) {
+            return null;
         }
-        return null;
+        Pattern pattern = Pattern.compile(PATTERN);
+        Matcher matcher = pattern.matcher(targetUri.toString());
+        if (!matcher.matches()) {
+            LOGGER.error("[grpc-polaris] target format is wrong, eg: polaris://serviceName?key=value");
+            throw new PolarisGrpcException("target format is wrong, eg: polaris://serviceName?key=value");
+        }
+        return new PolarisNameResolver(targetUri, context, consumerAPI);
     }
     
     /**

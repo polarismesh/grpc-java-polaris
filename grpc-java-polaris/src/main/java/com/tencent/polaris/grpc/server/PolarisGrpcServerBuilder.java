@@ -29,6 +29,7 @@ import io.grpc.ServerBuilder;
 import io.grpc.ServerInterceptor;
 import io.grpc.ServerServiceDefinition;
 import java.io.File;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -41,19 +42,26 @@ import javax.annotation.Nullable;
  */
 public final class PolarisGrpcServerBuilder extends ServerBuilder<PolarisGrpcServerBuilder> {
 
+    private static final String DEFAULT_NAMESPACE = "default";
+
+    private static final int DEFAULT_TTL = 5;
+
     private String applicationName;
 
     private String namespace;
 
     private Map<String, String> metaData = new HashMap<>();
 
-    private int ttl;
+    private int heartbeatInterval;
 
     private String host;
 
-    private static final String DEFAULT_NAMESPACE = "default";
+    private DelayRegister delayRegister;
 
-    private static final int DEFAULT_TTL = 5;
+    /**
+     * gRPC-Server 优雅关闭最大等待时长
+     */
+    private Duration maxWaitDuration = Duration.ofSeconds(30);
 
     private final ServerBuilder<?> builder;
 
@@ -119,11 +127,11 @@ public final class PolarisGrpcServerBuilder extends ServerBuilder<PolarisGrpcSer
     /**
      * Set the heartbeat report time by default 5 seconds.
      *
-     * @param ttl Time in seconds
+     * @param heartbeatInterval Time in seconds
      * @return PolarisGrpcServerBuilder
      */
-    public PolarisGrpcServerBuilder ttl(int ttl) {
-        this.ttl = ttl;
+    public PolarisGrpcServerBuilder heartbeatInterval(int heartbeatInterval) {
+        this.heartbeatInterval = heartbeatInterval;
         return this;
     }
     
@@ -195,9 +203,36 @@ public final class PolarisGrpcServerBuilder extends ServerBuilder<PolarisGrpcSer
         return this;
     }
 
+    /**
+     * 延迟注册, 用户可以通过设置 {@link DelayRegister} 来延迟 gRPC-server 注册到 polaris 对外提供服务的时间
+     * 默认支持策略
+     * - {@link com.tencent.polaris.grpc.server.impl.WaitDelayRegister} 等待一段时间在进行注册
+     *
+     * @param delayRegister {@link DelayRegister}
+     * @return {@link PolarisGrpcServerBuilder}
+     */
+    public PolarisGrpcServerBuilder delayRegister(DelayRegister delayRegister) {
+        this.delayRegister = delayRegister;
+        return this;
+    }
+
+    /**
+     * 优雅下线的最大等待时间，如果到了一定时间还没有结束，则直接强制关闭，默认 Duration.ofSeconds(30)
+     *
+     * @param maxWaitDuration {@link Duration}
+     * @return {@link PolarisGrpcServerBuilder}
+     */
+    public PolarisGrpcServerBuilder maxWaitDuration(Duration maxWaitDuration) {
+        this.maxWaitDuration = maxWaitDuration;
+        return this;
+    }
+
     @Override
     public Server build() {
-        checkField();
+        setDefault();
+
+        // 注册统计 server 当前正在处理的请求数量
+        this.builder.intercept(GraceOffline.createInterceptor());
         for (PolarisServerInterceptor interceptor : polarisInterceptors) {
             interceptor.init(namespace, applicationName, context);
             this.builder.intercept(interceptor);
@@ -206,15 +241,18 @@ public final class PolarisGrpcServerBuilder extends ServerBuilder<PolarisGrpcSer
             this.builder.intercept(interceptor);
         }
 
-        return new PolarisGrpcServer(this, context, this.builder.build());
+        PolarisGrpcServer server = new PolarisGrpcServer(this, context, this.builder.build());
+        server.setDelayRegister(delayRegister);
+        server.setMaxWaitDuration(maxWaitDuration);
+        return server;
     }
 
-    private void checkField() {
+    private void setDefault() {
         if (StringUtils.isBlank(namespace)) {
             this.namespace = DEFAULT_NAMESPACE;
         }
-        if (ttl == 0) {
-            this.ttl = DEFAULT_TTL;
+        if (heartbeatInterval == 0) {
+            this.heartbeatInterval = DEFAULT_TTL;
         }
     }
 
@@ -230,8 +268,8 @@ public final class PolarisGrpcServerBuilder extends ServerBuilder<PolarisGrpcSer
         return metaData;
     }
 
-    public int getTtl() {
-        return ttl;
+    public int getHeartbeatInterval() {
+        return heartbeatInterval;
     }
 
     public String getHost() {

@@ -101,7 +101,7 @@ public class PolarisRateLimitServerInterceptor extends PolarisServerInterceptor 
         final Map<String, String> labels = collectLabels(loadRateLimitRule(new ServiceKey(namespace, serviceName)), headers);
         request.setLabels(labels);
 
-        LOG.debug("do acquire rate-limit quota, request : {}", request);
+        LOG.debug("[grpc-polaris] do acquire rate-limit quota, request : {}", request);
 
         final QuotaResponse response = limitAPI.getQuota(request);
         if (Objects.equals(response.getCode(), QuotaResultCode.QuotaResultOk)) {

@@ -25,11 +25,14 @@ import com.tencent.polaris.api.rpc.InstanceRegisterResponse;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.client.api.SDKContext;
 import com.tencent.polaris.factory.api.DiscoveryAPIFactory;
+import com.tencent.polaris.grpc.server.impl.NoopDelayRegister;
 import com.tencent.polaris.grpc.util.NetworkHelper;
 import io.grpc.Server;
 import io.grpc.ServerServiceDefinition;
 import java.io.IOException;
+import java.time.Duration;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -53,11 +56,15 @@ public class PolarisGrpcServer extends Server {
 
     private Server targetServer;
 
-    private final AtomicBoolean shutdownOnce = new AtomicBoolean(false);
-
     private String host;
 
-    private final ScheduledExecutorService executorService = new ScheduledThreadPoolExecutor(1, r -> {
+    private DelayRegister delayRegister = new NoopDelayRegister();
+
+    private Duration maxWaitDuration;
+
+    private final AtomicBoolean shutdownOnce = new AtomicBoolean(false);
+
+    private final ScheduledExecutorService executorService = new ScheduledThreadPoolExecutor(2, r -> {
         Thread t = new Thread(r);
         t.setDaemon(true);
         t.setName("polaris-grpc-server");
@@ -75,7 +82,19 @@ public class PolarisGrpcServer extends Server {
     public Server start() throws IOException {
         initLocalHost();
         targetServer = targetServer.start();
-        this.registerInstance(targetServer.getServices());
+
+        if (Objects.nonNull(delayRegister)) {
+            executorService.execute(() -> {
+                for (;;) {
+                    if (delayRegister.allowRegis()) {
+                        break;
+                    }
+                }
+
+                this.registerInstance(targetServer.getServices());
+            });
+        }
+
         return this;
     }
 
@@ -86,7 +105,7 @@ public class PolarisGrpcServer extends Server {
             this.deregister(targetServer.getServices());
             providerAPI.destroy();
         }
-        return this.targetServer.shutdown();
+        return new GraceOffline(targetServer, maxWaitDuration).shutdown();
     }
 
     @Override
@@ -117,6 +136,14 @@ public class PolarisGrpcServer extends Server {
     @Override
     public void awaitTermination() throws InterruptedException {
         this.targetServer.awaitTermination();
+    }
+
+    public void setDelayRegister(DelayRegister delayRegister) {
+        this.delayRegister = delayRegister;
+    }
+
+    public void setMaxWaitDuration(Duration maxWaitDuration) {
+        this.maxWaitDuration = maxWaitDuration;
     }
 
     private void initLocalHost() {
@@ -155,10 +182,10 @@ public class PolarisGrpcServer extends Server {
         request.setService(serviceName);
         request.setHost(host);
         request.setPort(targetServer.getPort());
-        request.setTtl(builder.getTtl());
+        request.setTtl(builder.getHeartbeatInterval());
         request.setMetadata(builder.getMetaData());
         InstanceRegisterResponse response = providerAPI.register(request);
-        LOG.info("grpc server register polaris success, instance-id:{}", response.getInstanceId());
+        LOG.info("[grpc-polaris] register polaris success, instance-id:{}", response.getInstanceId());
         this.heartBeat(serviceName);
     }
 
@@ -168,11 +195,11 @@ public class PolarisGrpcServer extends Server {
      * @param serviceName service name
      */
     private void heartBeat(String serviceName) {
-        final int ttl = builder.getTtl();
+        final int ttl = builder.getHeartbeatInterval();
         final int port = targetServer.getPort();
         final String namespace = builder.getNamespace();
         executorService.scheduleAtFixedRate(() -> {
-            LOG.info("report service heartbeat");
+            LOG.info("[grpc-polaris] report service heartbeat");
             InstanceHeartbeatRequest request = new InstanceHeartbeatRequest();
             request.setNamespace(namespace);
             request.setService(serviceName);
@@ -181,7 +208,7 @@ public class PolarisGrpcServer extends Server {
             try {
                 providerAPI.heartbeat(request);
             } catch (PolarisException e) {
-                LOG.error("report service heartbeat fail", e);
+                LOG.error("[grpc-polaris] report service heartbeat fail", e);
             }
         }, ttl / 2, ttl, TimeUnit.SECONDS);
     }
@@ -192,7 +219,7 @@ public class PolarisGrpcServer extends Server {
      * @param definitions Definition of a service
      */
     private void deregister(List<ServerServiceDefinition> definitions) {
-        LOG.info("begin do deregister grpc service");
+        LOG.info("[grpc-polaris] begin do deregister grpc service");
         if (StringUtils.isNotBlank(builder.getApplicationName())) {
             this.deregisterOne(builder.getApplicationName());
             return;
