@@ -16,10 +16,13 @@
 
 package com.tencent.polaris.grpc;
 
+import com.tencent.polaris.grpc.server.GraceOffline;
 import com.tencent.polaris.grpc.server.PolarisGrpcServerBuilder;
 
 import io.grpc.Server;
 import java.io.IOException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author lixiaoshuang
@@ -32,7 +35,7 @@ public class ServerMain {
                 .namespace("default")
                 .applicationName("CircuitBreakerServerGRPCJava")
                 .metadata(null)
-                .ttl(5)
+                .heartbeatInterval(5)
                 .addService(new HelloProvider())
                 .addService(new HiProvider())
                 .build();

@@ -16,6 +16,7 @@
 
 package com.tencent.polaris.grpc.server;
 
+import com.google.common.annotations.VisibleForTesting;
 import io.grpc.ForwardingServerCall;
 import io.grpc.ForwardingServerCallListener;
 import io.grpc.Metadata;
@@ -45,16 +46,29 @@ public final class GraceOffline {
 
     private final Duration maxWaitDuration;
 
+    private final AtomicBoolean executed = new AtomicBoolean(false);
+
     public GraceOffline(Server server, Duration maxWaitDuration) {
         this.grpcServer = server;
         this.maxWaitDuration = maxWaitDuration;
     }
 
     public Server shutdown() {
+        if (!executed.compareAndSet(false, true)) {
+            return grpcServer.shutdown();
+        }
+
         long startTime = System.currentTimeMillis();
         long expectEndTime = startTime + maxWaitDuration.toMillis();
 
         LOGGER.info("[grpc-polaris] begin grace shutdown");
+
+        try {
+            // 等待 4 个 pull 时间间隔
+            TimeUnit.SECONDS.sleep(4 * 2);
+        } catch (InterruptedException ignore) {
+            Thread.currentThread().interrupt();
+        }
 
         for (;;) {
             long noFinishRequestCount = HANDLING_REQUEST_COUNT.get();
@@ -76,6 +90,11 @@ public final class GraceOffline {
             }
         }
         return grpcServer.shutdown();
+    }
+
+    @VisibleForTesting
+    public static long getCurrentTotalHandlingRequest() {
+        return HANDLING_REQUEST_COUNT.get();
     }
 
     public static ServerInterceptor createInterceptor() {

@@ -105,7 +105,12 @@ public class PolarisGrpcServer extends Server {
             this.deregister(targetServer.getServices());
             providerAPI.destroy();
         }
-        return new GraceOffline(targetServer, maxWaitDuration).shutdown();
+
+        if (builder.isOpenGraceOffline()) {
+            return new GraceOffline(targetServer, maxWaitDuration).shutdown();
+        }
+
+        return targetServer.shutdown();
     }
 
     @Override
@@ -139,6 +144,9 @@ public class PolarisGrpcServer extends Server {
     }
 
     public void setDelayRegister(DelayRegister delayRegister) {
+        if (delayRegister == null) {
+            return;
+        }
         this.delayRegister = delayRegister;
     }
 

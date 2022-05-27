@@ -38,6 +38,7 @@ import io.grpc.Status;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
@@ -126,7 +127,8 @@ public class PolarisLoadBalancer extends LoadBalancer {
     }
 
     private void processSubChannelState(Subchannel subChannel, ConnectivityStateInfo stateInfo) {
-        if (subChannels.get(subChannel.getAddresses()).getChannel() != subChannel) {
+        PolarisSubChannel channel = subChannels.get(subChannel.getAddresses());
+        if (Objects.isNull(channel) || channel.getChannel() != subChannel) {
             return;
         }
         if (stateInfo.getState() == TRANSIENT_FAILURE || stateInfo.getState() == IDLE) {

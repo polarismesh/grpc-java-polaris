@@ -21,6 +21,9 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 import com.tencent.polaris.api.utils.StringUtils;
+import java.util.concurrent.Callable;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
@@ -34,21 +37,34 @@ import java.util.concurrent.Executors;
  */
 @Slf4j
 public class ConsumerServer {
-    
-    public static void main(String[] args) throws IOException {
+
+    public static final HelloConsumer HELLO_CONSUMER = new HelloConsumer();
+
+    public static void main(String[] args) throws Exception {
+        log.info("http server start on port 40041");
+
+        for (int i = 0; i < 10; i ++) {
+            AtomicInteger holder = new AtomicInteger(i);
+            Executors.newSingleThreadScheduledExecutor().scheduleWithFixedDelay(() -> {
+               try {
+                   String response = ConsumerServer.HELLO_CONSUMER.hello("consumer-" + holder.get());
+                   System.out.println("receive resp : " + response);
+               } catch (Exception e) {
+                   e.printStackTrace();
+               }
+            }, 200, 200, TimeUnit.MILLISECONDS);
+        }
+
         HttpServer httpServer = HttpServer.create(new InetSocketAddress(40041), 0);
         httpServer.createContext("/echo", new ConsumerHttpHandler());
         httpServer.setExecutor(Executors.newFixedThreadPool(10));
         httpServer.start();
-        log.info("http server start on port 40041");
     }
 }
 
 @Slf4j
 class ConsumerHttpHandler implements HttpHandler {
-    
-    private static final HelloConsumer HELLO_CONSUMER = new HelloConsumer();
-    
+
     @Override
     public void handle(HttpExchange httpExchange) {
         
@@ -59,7 +75,7 @@ class ConsumerHttpHandler implements HttpHandler {
                 String[] split = paramStr.split("=");
                 param = split[1];
             }
-            String response = HELLO_CONSUMER.hello(param);
+            String response = ConsumerServer.HELLO_CONSUMER.hello(param);
             handleResponse(httpExchange, response);
         } catch (Exception ex) {
             log.error("ConsumerHttpHandler error", ex);

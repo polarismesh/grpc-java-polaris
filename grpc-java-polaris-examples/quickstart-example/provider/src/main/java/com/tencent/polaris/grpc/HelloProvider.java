@@ -17,15 +17,31 @@
 package com.tencent.polaris.grpc;
 
 import io.grpc.stub.StreamObserver;
+import java.util.Arrays;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author lixiaoshuang
  */
 public class HelloProvider extends HelloGrpc.HelloImplBase {
-    
+
+    String[] args;
+
+    public HelloProvider(String[] args) {
+        this.args = args;
+    }
+
     @Override
     public void sayHello(HelloPolaris.request request, StreamObserver<HelloPolaris.response> responseObserver) {
-        String msg = request.getMsg();
+        String msg = "I'm DiscoverServerGRPCJava provider, "
+                + "My Info : "
+                + Arrays.toString(args)
+                + request.getMsg();
+        try {
+            TimeUnit.MILLISECONDS.sleep(200);
+        } catch (InterruptedException ignore) {
+            Thread.currentThread().interrupt();
+        }
         HelloPolaris.response response = HelloPolaris.response.newBuilder().setData(msg).build();
         responseObserver.onNext(response);
         responseObserver.onCompleted();
