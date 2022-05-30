@@ -93,7 +93,7 @@ public class PolarisNameResolver extends NameResolver {
         request.setNamespace(namespace);
         request.setService(service);
         InstancesResponse response = consumerAPI.getHealthyInstancesInstance(request);
-        LOG.info("namespace:{} service:{} instance size:{}", namespace, service,
+        LOG.info("[grpc-polaris] namespace:{} service:{} instance size:{}", namespace, service,
                 response.getInstances().length);
         this.listener = listener;
         notifyListener(listener, response);
@@ -151,7 +151,7 @@ public class PolarisNameResolver extends NameResolver {
 
         @Override
         public void onEvent(ServiceChangeEvent event) {
-            LOG.info("receive:{} service:{} final instance size:{}", namespace, service,
+            LOG.info("[grpc-polaris] receive:{} service:{} final instance size:{}", namespace, service,
                     event.getAllInstances().size());
 
             GetHealthyInstancesRequest request = new GetHealthyInstancesRequest();

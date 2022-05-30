@@ -14,36 +14,30 @@
  * the License.
  */
 
-package com.tencent.polaris.grpc;
+package com.tencent.polaris.grpc.server.impl;
 
-import io.grpc.stub.StreamObserver;
-import java.util.Arrays;
+import com.tencent.polaris.grpc.server.DelayRegister;
+import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 
 /**
- * @author lixiaoshuang
+ * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public class HelloProvider extends HelloGrpc.HelloImplBase {
+public final class WaitDelayRegister implements DelayRegister {
 
-    String[] args;
+    private final Duration waitTime;
 
-    public HelloProvider(String[] args) {
-        this.args = args;
+    public WaitDelayRegister(Duration waitTime) {
+        this.waitTime = waitTime;
     }
 
     @Override
-    public void sayHello(HelloPolaris.request request, StreamObserver<HelloPolaris.response> responseObserver) {
-        String msg = "I'm DiscoverServerGRPCJava provider, "
-                + "My Info : "
-                + Arrays.toString(args)
-                + request.getMsg();
+    public boolean allowRegis() {
         try {
-            TimeUnit.MILLISECONDS.sleep(200);
+            TimeUnit.SECONDS.sleep(waitTime.getSeconds());
         } catch (InterruptedException ignore) {
             Thread.currentThread().interrupt();
         }
-        HelloPolaris.response response = HelloPolaris.response.newBuilder().setData(msg).build();
-        responseObserver.onNext(response);
-        responseObserver.onCompleted();
+        return true;
     }
 }

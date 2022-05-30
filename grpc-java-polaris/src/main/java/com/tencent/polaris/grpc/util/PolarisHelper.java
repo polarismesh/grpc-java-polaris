@@ -81,15 +81,20 @@ public class PolarisHelper {
      */
     public static void autoCollectLabels(Metadata headers, Map<String, String> finalLabels, Set<String> labelKeys) {
         for (String label : labelKeys) {
-            if (label.startsWith("grpc.header.")) {
+            if (label.startsWith(Common.GRPC_HEADER_PREFIX)) {
                 String newLabel = label.substring(Common.GRPC_HEADER_PREFIX_LEN);
                 finalLabels.put(label, headers.get(Key.of(newLabel, Metadata.ASCII_STRING_MARSHALLER)));
                 continue;
             }
 
-            if (label.startsWith("ctx.")) {
+            if (label.startsWith(Common.GRPC_CONTEXT_PREFIX)) {
                 String newLabel = label.substring(Common.GRPC_CONTEXT_PREFIX_LEN);
                 finalLabels.put(label, String.valueOf(Context.key(newLabel).get()));
+            }
+
+            if (label.startsWith(Common.GRPC_SYSTEM_ENV_PREFIX)) {
+                String newLabel = label.substring(Common.GRPC_CONTEXT_PREFIX_LEN);
+                finalLabels.put(label, System.getenv(newLabel));
             }
         }
     }

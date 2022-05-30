@@ -107,7 +107,7 @@ public class PolarisPicker extends SubchannelPicker {
                             .method(args.getMethodDescriptor().getBareMethodName())
                             .build()));
         } catch (PolarisException e) {
-            LOG.error("pick subChannel fail", e);
+            LOG.error("[grpc-polaris] pick subChannel fail", e);
             return PickResult.withError(Status.UNKNOWN.withCause(e));
         }
 

@@ -18,6 +18,7 @@ package com.tencent.polaris.grpc;
 
 import com.tencent.polaris.grpc.server.PolarisGrpcServerBuilder;
 
+import com.tencent.polaris.grpc.util.JvmHookHelper;
 import com.tencent.polaris.grpc.util.PolarisHelper;
 import com.tencent.polaris.ratelimit.api.rpc.QuotaResponse;
 import io.grpc.Server;
@@ -40,13 +41,19 @@ public class ServerMain {
                 .intercept(PolarisHelper.buildRateLimitInterceptor()
                         .rateLimitCallback(callback)
                         .build())
-                .ttl(5)
+                .heartbeatInterval(5)
                 .addService(new HelloProvider())
                 .addService(new HiProvider())
                 .build();
 
         try {
-            polarisGrpcServer.start();
+            Server server = polarisGrpcServer.start();
+            JvmHookHelper.addShutdownHook(() -> {
+                long start = System.currentTimeMillis();
+                System.out.println("start shutdown");
+                server.shutdown();
+                System.out.println("end shutdown, cost : " + (System.currentTimeMillis() - start) + "ms");
+            });
         } catch (IOException e) {
             e.printStackTrace();
         }

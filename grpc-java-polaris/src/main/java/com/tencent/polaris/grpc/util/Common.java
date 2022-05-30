@@ -25,9 +25,18 @@ import io.grpc.Attributes.Key;
  */
 public class Common {
 
-    public static final int GRPC_HEADER_PREFIX_LEN = "grpc.header.".length();
+    public static final String GRPC_HEADER_PREFIX = "grpc.header.";
 
-    public static final int GRPC_CONTEXT_PREFIX_LEN = "ctx.header.".length();
+    public static final String GRPC_CONTEXT_PREFIX = "grpc.ctx.";
+
+    public static final String GRPC_SYSTEM_ENV_PREFIX = "sys.env.";
+
+
+    public static final int GRPC_HEADER_PREFIX_LEN = GRPC_HEADER_PREFIX.length();
+
+    public static final int GRPC_CONTEXT_PREFIX_LEN = GRPC_CONTEXT_PREFIX.length();
+
+    public static final int GRPC_SYSTEM_ENV_PREFIX_LEN = GRPC_SYSTEM_ENV_PREFIX.length();
 
     /**
      * {@link io.grpc.Attributes} 中存放 {@link Instance} 的 key
