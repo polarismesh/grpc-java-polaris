@@ -16,11 +16,15 @@
 
 package com.tencent.polaris.grpc.util;
 
+import com.tencent.polaris.grpc.client.MetadataClientInterceptor;
 import com.tencent.polaris.grpc.ratelimit.PolarisRateLimitServerInterceptor;
+import com.tencent.polaris.grpc.server.MetadataServerInterceptor;
 import com.tencent.polaris.ratelimit.api.rpc.QuotaResponse;
+import io.grpc.ClientInterceptor;
 import io.grpc.Context;
 import io.grpc.Metadata;
 import io.grpc.Metadata.Key;
+import io.grpc.ServerInterceptor;
 import io.grpc.Status;
 
 import java.util.Collections;
@@ -30,6 +34,7 @@ import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.function.BiFunction;
+import java.util.function.Predicate;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
@@ -97,6 +102,19 @@ public class PolarisHelper {
                 finalLabels.put(label, System.getenv(newLabel));
             }
         }
+    }
+
+    public static ClientInterceptor buildMetadataClientInterceptor() {
+        return new MetadataClientInterceptor(s -> true);
+    }
+
+
+    public static ClientInterceptor buildMetadataClientInterceptor(Predicate<String> predicate) {
+        return new MetadataClientInterceptor(predicate);
+    }
+
+    public static ServerInterceptor buildMetadataServerInterceptor() {
+        return new MetadataServerInterceptor();
     }
 
     /**
