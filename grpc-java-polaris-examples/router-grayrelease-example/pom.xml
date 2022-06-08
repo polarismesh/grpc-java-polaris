@@ -20,7 +20,7 @@
         <module>router-grayrelease-middle</module>
         <module>router-grayrelease-gateway</module>
         <module>router-grayrelease-frontend</module>
-        <module>router-grayrelesae-backend</module>
+        <module>router-grayrelease-backend</module>
         <module>router-grayrelease-proto</module>
     </modules>
 
