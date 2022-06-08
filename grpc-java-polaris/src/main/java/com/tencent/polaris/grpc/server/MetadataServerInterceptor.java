@@ -18,6 +18,7 @@ package com.tencent.polaris.grpc.server;
 
 import com.tencent.polaris.grpc.metadata.MetadataContext;
 import io.grpc.Context;
+import io.grpc.Contexts;
 import io.grpc.ForwardingServerCall.SimpleForwardingServerCall;
 import io.grpc.Metadata;
 import io.grpc.Metadata.Key;
@@ -27,6 +28,7 @@ import io.grpc.ServerCallHandler;
 import io.grpc.ServerInterceptor;
 import io.grpc.Status;
 
+import io.grpc.internal.GrpcUtil;
 import java.util.Set;
 
 import static com.tencent.polaris.grpc.metadata.MetadataContext.METADATA_CONTEXT_KEY;
@@ -42,22 +44,14 @@ public class MetadataServerInterceptor implements ServerInterceptor {
             Metadata metadata,
             ServerCallHandler<ReqT, RespT> next) {
 
-        return next.startCall(new SimpleForwardingServerCall<ReqT, RespT>(serverCall) {
-            @Override
-            public void request(int numMessages) {
-                copyMetadataToMetadataContext(metadata);
-                super.request(numMessages);
-            }
+        Context newCtx = copyMetadataToMetadataContext(metadata);
 
-            @Override
-            public void close(Status status, Metadata trailers) {
-                super.close(status, trailers);
-            }
-        }, metadata);
+        return Contexts.interceptCall(newCtx, serverCall, metadata, next);
     }
 
-    private void copyMetadataToMetadataContext(Metadata headers) {
+    private Context copyMetadataToMetadataContext(Metadata headers) {
         MetadataContext metadataContext = METADATA_CONTEXT_KEY.get();
+        metadataContext.reset();
 
         Set<String> keys = headers.keys();
 
@@ -66,7 +60,6 @@ public class MetadataServerInterceptor implements ServerInterceptor {
             metadataContext.putHeaderFragment(key, val);
         }
 
-        Context newCtx = Context.current().withValue(METADATA_CONTEXT_KEY, metadataContext);
-        Context.current().detach(newCtx);
+        return Context.current().withValue(METADATA_CONTEXT_KEY, metadataContext);
     }
 }

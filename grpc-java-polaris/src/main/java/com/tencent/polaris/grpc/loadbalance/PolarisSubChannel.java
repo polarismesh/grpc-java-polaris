@@ -20,6 +20,7 @@ import com.google.common.base.Preconditions;
 import com.tencent.polaris.api.pojo.CircuitBreakerStatus;
 import com.tencent.polaris.api.pojo.Instance;
 import com.tencent.polaris.api.pojo.StatusDimension;
+import com.tencent.polaris.api.utils.StringUtils;
 import io.grpc.Attributes;
 import io.grpc.Channel;
 import io.grpc.ChannelLogger;
@@ -218,13 +219,14 @@ public class PolarisSubChannel extends Subchannel implements Instance {
     @Override
     public boolean equals(Object o) {
         if (o instanceof PolarisSubChannel) {
-            return getInstance().equals(((PolarisSubChannel) o).getInstance());
+            PolarisSubChannel other = (PolarisSubChannel) o;
+            return StringUtils.equals(this.getId(), other.getId());
         }
         return false;
     }
 
     @Override
     public int hashCode() {
-        return getInstance().hashCode();
+        return getInstance().getId().hashCode();
     }
 }

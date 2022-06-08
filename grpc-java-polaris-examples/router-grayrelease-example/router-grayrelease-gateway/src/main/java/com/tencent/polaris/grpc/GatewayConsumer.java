@@ -17,6 +17,8 @@
 package com.tencent.polaris.grpc;
 
 import com.sun.net.httpserver.Headers;
+import com.tencent.polaris.api.pojo.ServiceInfo;
+import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.grpc.client.PolarisManagedChannelBuilder;
 import io.grpc.ManagedChannel;
 import io.grpc.Metadata;
@@ -34,7 +36,10 @@ public class GatewayConsumer {
     private final ManagedChannel channel;
 
     public GatewayConsumer() {
-        channel = PolarisManagedChannelBuilder.forTarget("polaris://FrontendServer")
+        final ServiceInfo sourceService = new ServiceInfo();
+        sourceService.setNamespace("grayrelease");
+        sourceService.setService("GatewayServer");
+        channel = PolarisManagedChannelBuilder.forTarget("polaris://FrontendServer?namespace=grayrelease", sourceService)
                 .usePlaintext()
                 .build();
     }
@@ -42,21 +47,15 @@ public class GatewayConsumer {
     public String hello(String value, Headers headers) {
         Metadata metadata = new Metadata();
         headers.forEach((s, val) -> {
-            metadata.put(Key.of(s.toLowerCase(), Metadata.ASCII_STRING_MARSHALLER), val.get(0));
+            if (StringUtils.equals("uid", s.toLowerCase())) {
+                metadata.put(Key.of(s.toLowerCase(), Metadata.ASCII_STRING_MARSHALLER), val.get(0));
+            }
         });
 
         HelloGrpc.HelloBlockingStub helloBlockingStub = HelloGrpc.newBlockingStub(channel);
         helloBlockingStub = helloBlockingStub.withInterceptors(MetadataUtils.newAttachHeadersInterceptor(metadata));
         HelloPolaris.request request = HelloPolaris.request.newBuilder().setMsg(value).build();
         HelloPolaris.response response = helloBlockingStub.sayHello(request);
-
-        String frontendResp = "-> BackendServer [response=" +
-                response.getData() +
-                "," +
-                "metadata=" +
-                metadata +
-                "]";
-
-        return frontendResp;
+        return "GatewayServer -> " + response.getData();
     }
 }

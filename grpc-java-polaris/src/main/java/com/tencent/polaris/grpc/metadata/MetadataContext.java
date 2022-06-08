@@ -30,13 +30,13 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public final class MetadataContext {
 
-    public static final Key<MetadataContext> METADATA_CONTEXT_KEY = Context.key("MetadataContext");
+    public static final Key<MetadataContext> METADATA_CONTEXT_KEY = Context.keyWithDefault("MetadataContext", new MetadataContext());
 
     public static final String FRAGMENT_HEADER = "header";
 
     public static final String FRAGMENT_GRPC_CONTEXT = "grpc_context";
 
-    private final Map<String, Map<String, String>> fragmentContexts;
+    private Map<String, Map<String, String>> fragmentContexts;
 
     public MetadataContext() {
         this.fragmentContexts = new ConcurrentHashMap<>();
@@ -73,6 +73,10 @@ public final class MetadataContext {
             fragmentContexts.put(fragment, fragmentContext);
         }
         fragmentContext.put(key, value);
+    }
+
+    public void reset() {
+        fragmentContexts = new ConcurrentHashMap<>();
     }
 
     @Override

@@ -26,9 +26,11 @@ import com.tencent.polaris.api.core.ConsumerAPI;
 import com.tencent.polaris.api.pojo.ServiceInfo;
 import com.tencent.polaris.client.api.SDKContext;
 import com.tencent.polaris.factory.api.DiscoveryAPIFactory;
+import com.tencent.polaris.factory.api.RouterAPIFactory;
 import com.tencent.polaris.grpc.loadbalance.PolarisPicker.EmptyPicker;
 import com.tencent.polaris.grpc.util.Common;
 import com.tencent.polaris.grpc.util.GrpcHelper;
+import com.tencent.polaris.router.api.core.RouterAPI;
 import io.grpc.Attributes;
 import io.grpc.ConnectivityState;
 import io.grpc.ConnectivityStateInfo;
@@ -53,6 +55,8 @@ public class PolarisLoadBalancer extends LoadBalancer {
     private static final Status EMPTY_OK = Status.OK.withDescription("no subChannels ready");
 
     private final ConsumerAPI consumerAPI;
+
+    private final RouterAPI routerAPI;
 
     private final Helper helper;
 
@@ -92,6 +96,7 @@ public class PolarisLoadBalancer extends LoadBalancer {
 
     public PolarisLoadBalancer(final SDKContext context, final Helper helper) {
         this.consumerAPI = DiscoveryAPIFactory.createConsumerAPIByContext(context);
+        this.routerAPI = RouterAPIFactory.createRouterAPIByContext(context);
         this.helper = Preconditions.checkNotNull(helper);
     }
 
@@ -165,7 +170,7 @@ public class PolarisLoadBalancer extends LoadBalancer {
             }
             updateBalancingState(isConnecting ? CONNECTING : TRANSIENT_FAILURE, new EmptyPicker(aggStatus));
         } else {
-            updateBalancingState(READY, new PolarisPicker(activeList, this.consumerAPI, sourceService, holder.get()));
+            updateBalancingState(READY, new PolarisPicker(activeList, this.consumerAPI, this.routerAPI, sourceService, holder.get()));
         }
     }
 

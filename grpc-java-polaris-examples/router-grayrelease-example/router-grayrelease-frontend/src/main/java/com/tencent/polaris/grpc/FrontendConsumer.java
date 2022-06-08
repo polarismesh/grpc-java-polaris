@@ -16,6 +16,7 @@
 
 package com.tencent.polaris.grpc;
 
+import com.tencent.polaris.api.pojo.ServiceInfo;
 import com.tencent.polaris.grpc.client.PolarisManagedChannelBuilder;
 import com.tencent.polaris.grpc.util.PolarisHelper;
 import io.grpc.ManagedChannel;
@@ -36,7 +37,10 @@ public class FrontendConsumer {
     private final ManagedChannel channel;
     
     public FrontendConsumer() {
-        channel = PolarisManagedChannelBuilder.forTarget("polaris://MiddleServer")
+        final ServiceInfo sourceService = new ServiceInfo();
+        sourceService.setNamespace("grayrelease");
+        sourceService.setService("FrontendServer");
+        channel = PolarisManagedChannelBuilder.forTarget("polaris://MiddleServer?namespace=grayrelease", sourceService)
                 .usePlaintext()
                 .intercept(PolarisHelper.buildMetadataClientInterceptor())
                 .build();
@@ -48,7 +52,6 @@ public class FrontendConsumer {
         HelloGrpc.HelloBlockingStub helloBlockingStub = HelloGrpc.newBlockingStub(channel);
         HelloPolaris.request request = HelloPolaris.request.newBuilder().setMsg(value).build();
         HelloPolaris.response response = helloBlockingStub.sayHello(request);
-        System.out.println("grpc server response ---------> :" + response.getData());
         return response.getData();
     }
 }

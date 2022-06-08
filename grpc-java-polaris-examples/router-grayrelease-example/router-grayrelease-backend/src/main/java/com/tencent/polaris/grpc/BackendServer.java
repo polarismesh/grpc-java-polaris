@@ -17,6 +17,7 @@
 package com.tencent.polaris.grpc;
 
 import com.tencent.polaris.grpc.server.PolarisGrpcServerBuilder;
+import com.tencent.polaris.grpc.util.JvmHookHelper;
 import com.tencent.polaris.grpc.util.PolarisHelper;
 import io.grpc.Server;
 
@@ -29,7 +30,6 @@ import java.util.Map;
  */
 public class BackendServer {
 
-
     public static void main(String[] args) {
         runGrpcServer(args);
     }
@@ -38,9 +38,9 @@ public class BackendServer {
         Map<String, String> metadata = new HashMap<>();
         metadata.put("env", args[0]);
 
-        Server polarisGrpcServer = PolarisGrpcServerBuilder
+        Server server = PolarisGrpcServerBuilder
                 .forPort(0)
-                .namespace("default")
+                .namespace("grayrelease")
                 .host("127.0.0.1")
                 .applicationName("BackendServer")
                 .metadata(metadata)
@@ -50,7 +50,13 @@ public class BackendServer {
                 .build();
 
         try {
-            polarisGrpcServer.start();
+            server.start();
+            JvmHookHelper.addShutdownHook(() -> {
+                long start = System.currentTimeMillis();
+                System.out.println("start shutdown");
+                server.shutdown();
+                System.out.println("end shutdown, cost : " + (System.currentTimeMillis() - start) + "ms");
+            });
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
