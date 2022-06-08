@@ -1,134 +1,156 @@
 # gRPC-java-polaris Gray Release Example
 
-English | [简体中文](./README-zh.md)
+English | [中文](./README-zh.md)
 
-## 项目说明
+<!-- TOC -->
+* [gRPC-java-polaris Gray Release Example](#grpc-java-polaris-gray-release-example)
+  * [Project Instruction](#project-instruction)
+  * [Example schema](#example-schema)
+  * [How to access](#how-to-access)
+    * [Start gateway service](#start-gateway-service)
+    * [Start Front service](#start-front-service)
+      * [Start the baseline environment (blue)](#start-the-baseline-environment--blue-)
+      * [Start grayscale environment 1 (green)](#start-grayscale-environment-1--green-)
+      * [Start grayscale environment 2 (purple)](#start-grayscale-environment-2--purple-)
+      * [After startup](#after-startup)
+    * [Start middle service](#start-middle-service)
+      * [Start the baseline environment (blue)](#start-the-baseline-environment--blue-)
+      * [Start grayscale environment 2 (purple)](#start-grayscale-environment-2--purple-)
+    * [Start back service](#start-back-service)
+      * [Start the baseline environment (blue)](#start-the-baseline-environment--blue-)
+      * [Start grayscale environment 1 (green)](#start-grayscale-environment-1--green-)
+    * [test](#test)
+      * [Baseline environment routing](#baseline-environment-routing)
+      * [Grayscale environment 1 (green) routing](#grayscale-environment-1--green--routing)
+      * [Grayscale environment 2 (purple) routing](#grayscale-environment-2--purple--routing)
+<!-- TOC -->
 
-本项目演示如何使用 gRPC-java-polaris 完成 gRPC-java 应用的全链路灰度。
+## Project Instruction
 
-## 示例架构
+This project demonstrates how to use gRPC-java-polaris to complete the full-link grayscale of gRPC-java applications.
+
+## Example schema
 
 ![](https://qcloudimg.tencent-cloud.cn/raw/488182fd3001b3e77d9450e2c8798ff3.png)
 
-本示例请求都通过最上层网关进行分发，分发的目的地主要涉及3个环境：
-- 灰度环境1（只针对uid=1的请求放开），环境标识为env=green（绿色环境）
-- 灰度环境2（只针对uid=2的请求放开），环境标识为env=purple（紫色环境）
-- 基线环境（稳定的业务版本，针对其他请求放开），环境标识为env=blue（蓝色环境）
+In this example, requests are distributed through the uppermost gateway, and the distribution destinations mainly involve three environments:
+- Grayscale environment 1 (only for requests with uid=1), the environment identifier is env=green (green environment)
+- Grayscale environment 2 (only open for requests with uid=2), the environment identifier is env=purple (purple environment)
+- Baseline environment (stable business version, open for other requests), the environment identifier is env=blue (blue environment)
 
-## 如何接入
+## How to access
 
-### 启动网关服务
-1. 
-2. 修改 polaris.yaml 文件
-    - 北极星服务端地址：grpc://127.0.0.1:8091
+### Start gateway service
+1. Modify the polaris.yaml file
+   - Polaris server address: grpc://127.0.0.1:8091
 
-2. 启动router-grayrelease-gateway应用
+2. Start the router-grayrelease-gateway application
 
-    - IDE直接启动：找到主类 `GatewayServer`，执行 main 方法启动应用。
-    - 打包编译后启动：首先执行 `mvn clean package` 将工程编译打包，然后执行 `java -jar router-grayrelease-gateway-${verion}.jar`启动应用。
+   - The IDE starts directly: find the main class `GatewayServer` and execute the main method to start the application.
+   - Start after packaging and compiling: first execute `mvn clean package` to compile and package the project, and then execute `java -jar router-grayrelease-gateway-${verion}.jar` to start the application.
 
-3. 添加路由规则
+3. Add routing rules
    ![](./image/gateway_route_rule.png)
 
-### 启动Front服务
+### Start Front service
 
-#### 启动基线环境（蓝色）
+#### Start the baseline environment (blue)
 
-1. 修改 polaris.yaml 文件
-    - 北极星服务端地址：grpc://127.0.0.1:8091
+1. Modify the polaris.yaml file
+   - Polaris server address: grpc://127.0.0.1:8091
 
-2. 启动router-grayrelease-frontend应用
+2. Start the router-grayrelease-frontend application
 
-    - IDE直接启动：找到主类 `FrontendServer`，执行 main 方法启动应用。
-    - 打包编译后启动：首先执行 `mvn clean package` 将工程编译打包，然后执行 `java -jar router-grayrelease-frontend-${verion}.jar blue`启动应用。
+   - The IDE starts directly: find the main class `FrontendServer` and execute the main method to start the application.
+   - Start after packaging and compiling: first execute `mvn clean package` to compile and package the project, and then execute `java -jar router-grayrelease-frontend-${verion}.jar blue` to start the application.
 
-#### 启动灰度环境1（绿色）
+#### Start grayscale environment 1 (green)
 
-1. 修改 polaris.yaml 文件
-    - 北极星服务端地址：grpc://127.0.0.1:8091
+1. Modify the polaris.yaml file
+   - Polaris server address: grpc://127.0.0.1:8091
 
-2. 启动router-grayrelease-frontend应用，执行 `java -jar router-grayrelease-frontend-${verion}.jar green`启动应用
+2. Start the router-grayrelease-frontend application and execute `java -jar router-grayrelease-frontend-${verion}.jar green` to start the application
 
-#### 启动灰度环境2（紫色）
+#### Start grayscale environment 2 (purple)
 
-1. 修改 polaris.yaml 文件
-    - 北极星服务端地址：grpc://127.0.0.1:8091
+1. Modify the polaris.yaml file
+   - Polaris server address: grpc://127.0.0.1:8091
 
-2. 启动router-grayrelease-frontend应用，执行 `java -jar router-grayrelease-frontend-${verion}.jar purple`启动应用
+2. Start the router-grayrelease-frontend application and execute `java -jar router-grayrelease-frontend-${verion}.jar purple` to start the application
 
-#### 启动后效果
+#### After startup
 
-在北极星控制台，可以看到gray-release-front服务下有3个节点，每个节点有不同的环境标识。
+In the North Star console, you can see that there are 3 nodes under the gray-release-front service, and each node has a different environment ID.
 
 ![](./image/frontend_instance_list.png)
 
-### 启动middle服务
+### Start middle service
 
-#### 启动基线环境（蓝色）
+#### Start the baseline environment (blue)
 
-1. 修改 polaris.yaml 文件
-    - 北极星服务端地址：grpc://127.0.0.1:8091
+1. Modify the polaris.yaml file
+   - Polaris server address: grpc://127.0.0.1:8091
 
-2. 启动router-grayrelease-middle应用
+2. Start the router-grayrelease-middle application
 
-    - IDE直接启动：找到主类 `MiddleServer`，执行 main 方法启动应用。
-    - 打包编译后启动：首先执行 `mvn clean package` 将工程编译打包，然后执行 `java -jar router-grayrelease-middle-${verion}.jar blue`启动应用。
+   - The IDE starts directly: find the main class `MiddleServer`, and execute the main method to start the application.
+   - Start after packaging and compiling: first execute `mvn clean package` to compile and package the project, and then execute `java -jar router-grayrelease-middle-${verion}.jar blue` to start the application.
 
 
-#### 启动灰度环境2（紫色）
+#### Start grayscale environment 2 (purple)
 
-1. 修改 polaris.yaml 文件
-    - 北极星服务端地址：grpc://127.0.0.1:8091
+1. Modify the polaris.yaml file
+   - Polaris server address: grpc://127.0.0.1:8091
 
-2. 启动router-grayrelease-middle应用，然后执行 `java -jar router-grayrelease-middle-${verion}.jar purple`启动应用。
+2. Start the router-grayrelease-middle application, and then execute `java -jar router-grayrelease-middle-${verion}.jar purple` to start the application.
 
-### 启动back服务
+### Start back service
 
-#### 启动基线环境（蓝色）
+#### Start the baseline environment (blue)
 
-1. 修改 polaris.yaml 文件
-    - 北极星服务端地址：grpc://127.0.0.1:8091
+1. Modify the polaris.yaml file
+   - Polaris server address: grpc://127.0.0.1:8091
 
-2. 启动router-grayrelease-backend应用
+2. Start the router-grayrelease-backend application
 
-    - IDE直接启动：找到主类 `BackendServer`，执行 main 方法启动应用。
-    - 打包编译后启动：首先执行 `mvn clean package` 将工程编译打包，然后执行 `java -jar router-grayrelease-backend-${verion}.jar blue`启动应用。
+   - IDE starts directly: find the main class `BackendServer` and execute the main method to start the application.
+   - Start after packaging and compiling: first execute `mvn clean package` to compile and package the project, and then execute `java -jar router-grayrelease-backend-${verion}.jar blue` to start the application.
 
-#### 启动灰度环境1（绿色）
+#### Start grayscale environment 1 (green)
 
-1. 修改 polaris.yaml 文件
-    - 北极星服务端地址：grpc://127.0.0.1:8091
+1. Modify the polaris.yaml file
+   - Polaris server address: grpc://127.0.0.1:8091
 
-2. 启动router-grayrelease-backend应用，然后执行 `java -jar router-grayrelease-backend-${verion}.jar green`启动应用。
+2. Start the router-grayrelease-backend application, and then execute `java -jar router-grayrelease-backend-${verion}.jar green` to start the application.
 
-### 测试
+### test
 
-#### 基线环境路由
+#### Baseline environment routing
 
 ````
 curl -H 'uid:0' 127.0.0.1:40041/echo
 ````
-获取结果
+get results
 ````
 GatewayServer -> FrontendServer[{env=blue}] -> MiddleServer[{env=blue}] -> BackendServer[{env=blue}]
 ````
 
-#### 灰度环境1（绿色）路由
+#### Grayscale environment 1 (green) routing
 
 ````
 curl -H'uid:1' 127.0.0.1:40041/echo
 ````
-获取结果
+get results
 ````
 GatewayServer -> FrontendServer[{env=green}] -> MiddleServer[{env=blue}] -> BackendServer[{env=green}]
 ````
 
-#### 灰度环境2（紫色）路由
+#### Grayscale environment 2 (purple) routing
 
 ````
 curl -H'uid:2' 127.0.0.1:40041/echo
 ````
-获取结果
+get results
 ````
 GatewayServer -> FrontendServer[{env=purple}] -> MiddleServer[{env=purple}] -> BackendServer[{env=blue}]
 ````
