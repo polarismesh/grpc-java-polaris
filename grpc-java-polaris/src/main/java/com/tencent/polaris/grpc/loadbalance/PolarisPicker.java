@@ -20,9 +20,11 @@ import com.google.common.base.Preconditions;
 import com.google.common.base.Predicate;
 import com.tencent.polaris.api.core.ConsumerAPI;
 import com.tencent.polaris.api.exception.PolarisException;
+import com.tencent.polaris.api.pojo.DefaultServiceInstances;
 import com.tencent.polaris.api.pojo.Instance;
 import com.tencent.polaris.api.pojo.ServiceEventKey.EventType;
 import com.tencent.polaris.api.pojo.ServiceInfo;
+import com.tencent.polaris.api.pojo.ServiceInstances;
 import com.tencent.polaris.api.pojo.ServiceKey;
 import com.tencent.polaris.api.rpc.GetOneInstanceRequest;
 import com.tencent.polaris.api.rpc.GetServiceRuleRequest;
@@ -31,9 +33,17 @@ import com.tencent.polaris.api.rpc.ServiceRuleResponse;
 import com.tencent.polaris.client.pb.RoutingProto.Route;
 import com.tencent.polaris.client.pb.RoutingProto.Routing;
 import com.tencent.polaris.client.pb.RoutingProto.Source;
+import com.tencent.polaris.factory.api.RouterAPIFactory;
 import com.tencent.polaris.grpc.util.ClientCallInfo;
 import com.tencent.polaris.grpc.util.Common;
 import com.tencent.polaris.grpc.util.PolarisHelper;
+import com.tencent.polaris.plugins.router.metadata.MetadataRouter;
+import com.tencent.polaris.router.api.core.RouterAPI;
+import com.tencent.polaris.router.api.rpc.ProcessLoadBalanceRequest;
+import com.tencent.polaris.router.api.rpc.ProcessLoadBalanceResponse;
+import com.tencent.polaris.router.api.rpc.ProcessRoutersRequest;
+import com.tencent.polaris.router.api.rpc.ProcessRoutersRequest.RouterNamesGroup;
+import com.tencent.polaris.router.api.rpc.ProcessRoutersResponse;
 import io.grpc.Attributes;
 import io.grpc.LoadBalancer.PickResult;
 import io.grpc.LoadBalancer.PickSubchannelArgs;
@@ -42,6 +52,7 @@ import io.grpc.LoadBalancer.SubchannelPicker;
 import io.grpc.Metadata;
 import io.grpc.Status;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -49,6 +60,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
@@ -74,10 +86,13 @@ public class PolarisPicker extends SubchannelPicker {
 
     private final ServiceInfo sourceService;
 
-    public PolarisPicker(final Map<PolarisSubChannel, PolarisSubChannel> channels,
-            final ConsumerAPI consumerAPI, final ServiceInfo sourceService, final Attributes attributes) {
+    private final RouterAPI routerAPI;
+
+    public PolarisPicker(final Map<PolarisSubChannel, PolarisSubChannel> channels, final ConsumerAPI consumerAPI,
+            final RouterAPI routerAPI, final ServiceInfo sourceService, final Attributes attributes) {
         this.channels = channels;
         this.consumerAPI = consumerAPI;
+        this.routerAPI = routerAPI;
         this.attributes = attributes;
         this.sourceService = sourceService;
     }
@@ -90,15 +105,22 @@ public class PolarisPicker extends SubchannelPicker {
 
         final String targetNamespace = attributes.get(Common.TARGET_NAMESPACE_KEY);
         final String targetService = attributes.get(Common.TARGET_SERVICE_KEY);
+        final ServiceKey target = new ServiceKey(targetNamespace, targetService);
 
-        GetOneInstanceRequest request = createGetOneRequest(targetNamespace, targetService, args);
+        List<Instance> instances = new ArrayList<>();
+        channels.forEach((key, val) -> instances.add(val));
+
+        ServiceInstances serviceInstances = new DefaultServiceInstances(target, instances);
 
         try {
-            InstancesResponse response = consumerAPI.getOneInstance(request);
-            Instance instance = response.getInstances()[0];
+            Instance instance = doLoadBalance(doRoute(serviceInstances, target, args));
             Subchannel channel = channels.get(new PolarisSubChannel(instance));
 
-            return channel == null ? PickResult.withError(Status.NOT_FOUND) : PickResult.withSubchannel(channel,
+            if (Objects.isNull(channel)) {
+                return PickResult.withNoResult();
+            }
+
+            return PickResult.withSubchannel(channel,
                     new PolarisClientStreamTracerFactory(ClientCallInfo.builder()
                             .consumerAPI(consumerAPI)
                             .instance(instance)
@@ -110,10 +132,41 @@ public class PolarisPicker extends SubchannelPicker {
             LOG.error("[grpc-polaris] pick subChannel fail", e);
             return PickResult.withError(Status.UNKNOWN.withCause(e));
         }
-
     }
 
-    private GetOneInstanceRequest createGetOneRequest(String targetNamespace, String targetService, PickSubchannelArgs args) {
+    Instance doLoadBalance(ServiceInstances serviceInstances) {
+
+        ProcessLoadBalanceRequest request = new ProcessLoadBalanceRequest();
+        request.setDstInstances(serviceInstances);
+
+        ProcessLoadBalanceResponse response = routerAPI.processLoadBalance(request);
+
+        return response.getTargetInstance();
+    }
+
+    ServiceInstances doRoute(ServiceInstances serviceInstances, ServiceKey target, PickSubchannelArgs args) {
+
+        ProcessRoutersRequest request = new ProcessRoutersRequest();
+        request.setDstInstances(serviceInstances);
+
+        final ServiceInfo serviceInfo = new ServiceInfo();
+        ServiceKey source = null;
+        if (Objects.nonNull(sourceService)) {
+            source = new ServiceKey(sourceService.getNamespace(), sourceService.getService());
+            serviceInfo.setNamespace(sourceService.getNamespace());
+            serviceInfo.setService(sourceService.getService());
+        }
+
+        serviceInfo.setMetadata(collectRoutingLabels(loadRouteRule(target, source), args.getHeaders()));
+        request.setSourceService(serviceInfo);
+
+        ProcessRoutersResponse response = routerAPI.processRouters(request);
+
+        return response.getServiceInstances();
+    }
+
+    private GetOneInstanceRequest createGetOneRequest(String targetNamespace, String targetService,
+            PickSubchannelArgs args) {
         final ServiceKey target = new ServiceKey(targetNamespace, targetService);
 
         final GetOneInstanceRequest request = new GetOneInstanceRequest();
@@ -135,9 +188,7 @@ public class PolarisPicker extends SubchannelPicker {
         return request;
     }
 
-    private Map<String, String> collectRoutingLabels(RouteResp routeResp, Metadata headers) {
-        List<Route> routes = routeResp.doFilter();
-
+    private Map<String, String> collectRoutingLabels(List<Route> routes, Metadata headers) {
         Set<String> labelKeys = new HashSet<>();
 
         routes.forEach(route -> {
@@ -155,21 +206,24 @@ public class PolarisPicker extends SubchannelPicker {
         return finalLabels;
     }
 
-    private RouteResp loadRouteRule(ServiceKey target, ServiceKey source) {
+    private List<Route> loadRouteRule(ServiceKey target, ServiceKey source) {
+
+        List<Route> rules = new ArrayList<>();
 
         GetServiceRuleRequest inBoundReq = new GetServiceRuleRequest();
         inBoundReq.setService(target.getService());
         inBoundReq.setNamespace(target.getNamespace());
         inBoundReq.setRuleType(EventType.ROUTING);
 
-        ServiceRuleResponse  inBoundResp = consumerAPI.getServiceRule(inBoundReq);
-        Routing inBoundRule  = (Routing) inBoundResp.getServiceRule().getRule();
+        ServiceRuleResponse inBoundResp = consumerAPI.getServiceRule(inBoundReq);
+        Routing inBoundRule = (Routing) inBoundResp.getServiceRule().getRule();
         if (Objects.nonNull(inBoundRule)) {
-            return new RouteResp(inBoundRule.getInboundsList(), target);
+            List<Route> tmpRules = new RouteResp(inBoundRule.getInboundsList(), target).doFilter();
+            rules.addAll(tmpRules);
         }
 
         if (Objects.isNull(source)) {
-            return new RouteResp(Collections.emptyList(), null);
+            return rules;
         }
 
         GetServiceRuleRequest outBoundReq = new GetServiceRuleRequest();
@@ -179,10 +233,14 @@ public class PolarisPicker extends SubchannelPicker {
 
         ServiceRuleResponse outBoundResp = consumerAPI.getServiceRule(outBoundReq);
         Routing outBoundRule = (Routing) outBoundResp.getServiceRule().getRule();
-        return new RouteResp(outBoundRule.getOutboundsList(), source);
+        if (Objects.nonNull(outBoundRule)) {
+            List<Route> tmpRules = new RouteResp(outBoundRule.getOutboundsList(), source).doFilter();
+            rules.addAll(tmpRules);
+        }
+        return rules;
     }
 
-    public static final class EmptyPicker extends SubchannelPicker  {
+    public static final class EmptyPicker extends SubchannelPicker {
 
         private final Status status;
 
@@ -196,6 +254,7 @@ public class PolarisPicker extends SubchannelPicker {
     }
 
     private static class RouteResp {
+
         final List<Route> rule;
         final ServiceKey serviceKey;
 

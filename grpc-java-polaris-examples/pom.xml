@@ -21,6 +21,7 @@
         <module>ratelimit</module>
         <module>router</module>
         <module>circuitbreaker</module>
+        <module>router-grayrelease-example</module>
     </modules>
     
     <properties>

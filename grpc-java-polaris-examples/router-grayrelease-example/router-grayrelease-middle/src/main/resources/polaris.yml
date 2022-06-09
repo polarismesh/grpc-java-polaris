@@ -1,0 +1,4 @@
+global:
+  serverConnector:
+    addresses:
+      - 183.47.111.80:8091

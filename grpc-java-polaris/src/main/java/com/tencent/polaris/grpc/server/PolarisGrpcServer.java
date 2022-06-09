@@ -62,6 +62,8 @@ public class PolarisGrpcServer extends Server {
 
     private Duration maxWaitDuration;
 
+    private RegisterHook registerHook;
+
     private final AtomicBoolean shutdownOnce = new AtomicBoolean(false);
 
     private final ScheduledExecutorService executorService = new ScheduledThreadPoolExecutor(2, r -> {
@@ -73,6 +75,7 @@ public class PolarisGrpcServer extends Server {
 
     PolarisGrpcServer(PolarisGrpcServerBuilder builder, SDKContext context, Server server) {
         this.builder = builder;
+        this.registerHook = builder.getRegisterHook();
         this.targetServer = server;
         this.context = context;
         this.providerAPI = DiscoveryAPIFactory.createProviderAPIByContext(context);
@@ -189,11 +192,25 @@ public class PolarisGrpcServer extends Server {
         request.setNamespace(builder.getNamespace());
         request.setService(serviceName);
         request.setHost(host);
+        request.setVersion(builder.getVersion());
+        request.setProtocol("grpc");
+        request.setWeight(builder.getWeight());
         request.setPort(targetServer.getPort());
         request.setTtl(builder.getHeartbeatInterval());
         request.setMetadata(builder.getMetaData());
+
+        if (Objects.nonNull(registerHook)) {
+            registerHook.beforeRegister(request);
+        }
+
         InstanceRegisterResponse response = providerAPI.register(request);
+
+        if (Objects.nonNull(registerHook)) {
+            registerHook.afterRegister(response);
+        }
+
         LOG.info("[grpc-polaris] register polaris success, instance-id:{}", response.getInstanceId());
+
         this.heartBeat(serviceName);
     }
 

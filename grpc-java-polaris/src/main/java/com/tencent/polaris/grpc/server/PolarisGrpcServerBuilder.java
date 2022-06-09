@@ -52,11 +52,17 @@ public final class PolarisGrpcServerBuilder extends ServerBuilder<PolarisGrpcSer
 
     private Map<String, String> metaData = new HashMap<>();
 
+    private int weight;
+
+    private String version;
+
     private int heartbeatInterval;
 
     private String host;
 
     private DelayRegister delayRegister;
+
+    private RegisterHook registerHook;
 
     /**
      * gRPC-Server 优雅关闭最大等待时长
@@ -125,7 +131,23 @@ public final class PolarisGrpcServerBuilder extends ServerBuilder<PolarisGrpcSer
         this.metaData = metadata;
         return this;
     }
-    
+
+    /**
+     * set instance weight
+     *
+     * @param weight
+     * @return
+     */
+    public PolarisGrpcServerBuilder weight(int weight) {
+        this.weight = weight;
+        return this;
+    }
+
+    public PolarisGrpcServerBuilder version(String version) {
+        this.version = version;
+        return this;
+    }
+
     /**
      * Set the heartbeat report time by default 5 seconds.
      *
@@ -234,6 +256,15 @@ public final class PolarisGrpcServerBuilder extends ServerBuilder<PolarisGrpcSer
         return this;
     }
 
+    public PolarisGrpcServerBuilder registerHook(RegisterHook registerHook) {
+        this.registerHook = registerHook;
+        return this;
+    }
+
+    RegisterHook getRegisterHook() {
+        return registerHook;
+    }
+
     @Override
     public Server build() {
         setDefault();
@@ -270,23 +301,23 @@ public final class PolarisGrpcServerBuilder extends ServerBuilder<PolarisGrpcSer
         }
     }
 
-    public String getApplicationName() {
+    String getApplicationName() {
         return applicationName;
     }
 
-    public String getNamespace() {
+    String getNamespace() {
         return namespace;
     }
 
-    public Map<String, String> getMetaData() {
+    Map<String, String> getMetaData() {
         return metaData;
     }
 
-    public int getHeartbeatInterval() {
+    int getHeartbeatInterval() {
         return heartbeatInterval;
     }
 
-    public String getHost() {
+    String getHost() {
         return host;
     }
 
@@ -294,7 +325,15 @@ public final class PolarisGrpcServerBuilder extends ServerBuilder<PolarisGrpcSer
         return context;
     }
 
-    public boolean isOpenGraceOffline() {
+    boolean isOpenGraceOffline() {
         return openGraceOffline;
+    }
+
+    int getWeight() {
+        return weight;
+    }
+
+    String getVersion() {
+        return version;
     }
 }

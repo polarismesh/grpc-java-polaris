@@ -17,35 +17,40 @@
 package com.tencent.polaris.grpc;
 
 import com.tencent.polaris.grpc.server.PolarisGrpcServerBuilder;
-
 import com.tencent.polaris.grpc.util.JvmHookHelper;
 import com.tencent.polaris.grpc.util.PolarisHelper;
 import io.grpc.Server;
+
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
 /**
- * @author lixiaoshuang
+ * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public class ServerMain {
+public class FrontendServer {
 
     public static void main(String[] args) {
+        runGrpcServer(args);
+    }
+
+    private static void runGrpcServer(String[] args) {
         Map<String, String> metadata = new HashMap<>();
         metadata.put("env", args[0]);
 
-        Server polarisGrpcServer = PolarisGrpcServerBuilder
+        Server server = PolarisGrpcServerBuilder
                 .forPort(0)
-                .namespace("default")
-                .applicationName("RouterServerGRPCJava")
+                .namespace("grayrelease")
+                .host("127.0.0.1")
+                .applicationName("FrontendServer")
                 .metadata(metadata)
                 .heartbeatInterval(5)
-                .addService(new HelloProvider(metadata))
-                .addService(new HiProvider())
+                .intercept(PolarisHelper.buildMetadataServerInterceptor())
+                .addService(new FrontendProvider(metadata))
                 .build();
 
         try {
-            Server server = polarisGrpcServer.start();
+            server.start();
             JvmHookHelper.addShutdownHook(() -> {
                 long start = System.currentTimeMillis();
                 System.out.println("start shutdown");
@@ -53,7 +58,7 @@ public class ServerMain {
                 System.out.println("end shutdown, cost : " + (System.currentTimeMillis() - start) + "ms");
             });
         } catch (IOException e) {
-            e.printStackTrace();
+            throw new RuntimeException(e);
         }
     }
 }

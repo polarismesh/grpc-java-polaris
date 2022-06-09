@@ -66,12 +66,6 @@ public class PolarisNameResolverProvider extends NameResolverProvider {
         if (!DEFAULT_SCHEME.equals(targetUri.getScheme())) {
             return null;
         }
-        Pattern pattern = Pattern.compile(PATTERN);
-        Matcher matcher = pattern.matcher(targetUri.toString());
-        if (!matcher.matches()) {
-            LOGGER.error("[grpc-polaris] target format is wrong, eg: polaris://serviceName?key=value");
-            throw new PolarisGrpcException("target format is wrong, eg: polaris://serviceName?key=value");
-        }
         return new PolarisNameResolver(targetUri, context, consumerAPI);
     }
     
