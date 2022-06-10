@@ -109,11 +109,7 @@ public class PolarisGrpcServer extends Server {
             providerAPI.destroy();
         }
 
-        if (builder.isOpenGraceOffline()) {
-            return new GraceOffline(targetServer, maxWaitDuration).shutdown();
-        }
-
-        return targetServer.shutdown();
+        return new GraceOffline(targetServer, maxWaitDuration).shutdown();
     }
 
     @Override

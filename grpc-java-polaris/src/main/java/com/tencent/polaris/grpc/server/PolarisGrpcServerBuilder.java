@@ -69,8 +69,6 @@ public final class PolarisGrpcServerBuilder extends ServerBuilder<PolarisGrpcSer
      */
     private Duration maxWaitDuration = Duration.ofSeconds(30);
 
-    private boolean openGraceOffline = true;
-
     private final ServerBuilder<?> builder;
 
     private final List<PolarisServerInterceptor> polarisInterceptors = new ArrayList<>();
@@ -251,11 +249,6 @@ public final class PolarisGrpcServerBuilder extends ServerBuilder<PolarisGrpcSer
         return this;
     }
 
-    public PolarisGrpcServerBuilder openGraceOffline(boolean openGraceOffline) {
-        this.openGraceOffline = openGraceOffline;
-        return this;
-    }
-
     public PolarisGrpcServerBuilder registerHook(RegisterHook registerHook) {
         this.registerHook = registerHook;
         return this;
@@ -268,12 +261,6 @@ public final class PolarisGrpcServerBuilder extends ServerBuilder<PolarisGrpcSer
     @Override
     public Server build() {
         setDefault();
-
-        if (openGraceOffline) {
-            // 注册统计 server 当前正在处理的请求数量
-            this.builder.intercept(GraceOffline.createInterceptor());
-        }
-
         for (PolarisServerInterceptor interceptor : polarisInterceptors) {
             interceptor.init(namespace, applicationName, context);
             this.builder.intercept(interceptor);
@@ -284,10 +271,7 @@ public final class PolarisGrpcServerBuilder extends ServerBuilder<PolarisGrpcSer
 
         PolarisGrpcServer server = new PolarisGrpcServer(this, context, this.builder.build());
         server.setDelayRegister(delayRegister);
-
-        if (openGraceOffline) {
-            server.setMaxWaitDuration(maxWaitDuration);
-        }
+        server.setMaxWaitDuration(maxWaitDuration);
 
         return server;
     }
@@ -323,10 +307,6 @@ public final class PolarisGrpcServerBuilder extends ServerBuilder<PolarisGrpcSer
 
     SDKContext getContext() {
         return context;
-    }
-
-    boolean isOpenGraceOffline() {
-        return openGraceOffline;
     }
 
     int getWeight() {
