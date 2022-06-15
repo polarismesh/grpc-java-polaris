@@ -52,7 +52,7 @@ public final class PolarisGrpcServerBuilder extends ServerBuilder<PolarisGrpcSer
 
     private Map<String, String> metaData = new HashMap<>();
 
-    private int weight;
+    private int weight = 100;
 
     private String version;
 
