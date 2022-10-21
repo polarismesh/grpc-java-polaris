@@ -53,11 +53,7 @@
         <slf4j-api.version>1.7.32</slf4j-api.version>
         <junit-jupiter.version>RELEASE</junit-jupiter.version>
         <grpc.version>1.42.1</grpc.version>
-<<<<<<< HEAD
         <polaris-dependencies.version>1.11.0-SNAPSHOT</polaris-dependencies.version>
-=======
-        <polaris-dependencies.version>1.6.1</polaris-dependencies.version>
->>>>>>> 5ff9289 (fix: fix weight is zero)
         <maven.jar.plugin.version>3.0.0</maven.jar.plugin.version>
         <maven.source.plugin.version>3.2.0</maven.source.plugin.version>
         <maven.javadoc.plugin.version>3.2.0</maven.javadoc.plugin.version>
