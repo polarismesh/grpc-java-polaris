@@ -32,7 +32,7 @@ public class ServerMain {
         Server polarisGrpcServer = PolarisGrpcServerBuilder
                 .forPort(0)
                 .namespace("default")
-                .host("10.68.104.33")
+                .host("127.0.0.1")
                 .applicationName("DiscoverServerGRPCJava")
                 .heartbeatInterval(5)
                 .addService(new HelloProvider(args))

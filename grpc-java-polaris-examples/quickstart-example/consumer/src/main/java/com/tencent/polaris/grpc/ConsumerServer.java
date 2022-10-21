@@ -55,7 +55,7 @@ public class ConsumerServer {
             }, 200, 200, TimeUnit.MILLISECONDS);
         }
 
-        HttpServer httpServer = HttpServer.create(new InetSocketAddress(40041), 0);
+        HttpServer httpServer = HttpServer.create(new InetSocketAddress(50041), 0);
         httpServer.createContext("/echo", new ConsumerHttpHandler());
         httpServer.setExecutor(Executors.newFixedThreadPool(10));
         httpServer.start();
