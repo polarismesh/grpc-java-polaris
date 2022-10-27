@@ -16,8 +16,12 @@
 
 package com.tencent.polaris.grpc;
 
+import com.tencent.polaris.client.api.SDKContext;
 import com.tencent.polaris.grpc.client.PolarisManagedChannelBuilder;
+import com.tencent.polaris.grpc.resolver.PolarisNameResolverProvider;
 import io.grpc.ManagedChannel;
+import io.grpc.ManagedChannelBuilder;
+import io.grpc.NameResolverRegistry;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -29,7 +33,9 @@ public class HelloConsumer {
     private ManagedChannel channel;
     
     public HelloConsumer() {
-        channel = PolarisManagedChannelBuilder.forTarget("polaris://DiscoverServerGRPCJava")
+        SDKContext context = SDKContext.initContext();
+        NameResolverRegistry.getDefaultRegistry().register(new PolarisNameResolverProvider(context));
+        channel = ManagedChannelBuilder.forTarget("polaris://DiscoverServerGRPCJava")
                 .usePlaintext()
                 .build();
     }

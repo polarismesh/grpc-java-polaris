@@ -10,7 +10,7 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>router-grayrelease</artifactId>
+    <artifactId>router-grayrelease-example</artifactId>
     <packaging>pom</packaging>
 
     <name>gRPC Java Polaris Router-GrayRelease Example</name>
