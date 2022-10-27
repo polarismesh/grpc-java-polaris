@@ -3,7 +3,7 @@ name: Release
 # 触发脚本的事件  这里为发布release之后触发
 on:
   release:
-    types: [released]
+    types: [published]
 jobs:
   publish:
     runs-on: ubuntu-latest
