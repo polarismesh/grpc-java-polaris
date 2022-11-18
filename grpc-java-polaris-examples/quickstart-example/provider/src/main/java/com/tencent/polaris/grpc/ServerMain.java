@@ -32,21 +32,14 @@ public class ServerMain {
         Server polarisGrpcServer = PolarisGrpcServerBuilder
                 .forPort(0)
                 .namespace("default")
-                .host("10.68.104.33")
+                .host("127.0.0.1")
                 .applicationName("DiscoverServerGRPCJava")
-                .openGraceOffline(true)
                 .heartbeatInterval(5)
                 .addService(new HelloProvider(args))
                 .addService(new HiProvider(args))
                 .build();
 
         try {
-            Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate(() -> {
-                long count = GraceOffline.getCurrentTotalHandlingRequest();
-                if (count != 0) {
-                    System.out.println("current total handling request count : " + count);
-                }
-            }, 100, 100, TimeUnit.MILLISECONDS);
             Server server = polarisGrpcServer.start();
 
             JvmHookHelper.addShutdownHook(() -> {

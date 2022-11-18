@@ -51,7 +51,21 @@ PolarisGrpcServer polarisGrpcServer = PolarisGrpcServer.builder()
 polarisGrpcServer.start();
 ```
 
-客户端使用时需要将 `ManagedChannelBuilder` 替换为 `PolarisManagedChannelBuilder`：
+客户端使用
+
+方式一：使用原生的 **ManagedChannelBuilder**
+
+```
+SDKContext context = SDKContext.initContext();
+
+ManagedChannel channel = ManagedChannelBuilder.forTarget(target)
+          			.nameResolverFactory(new PolarisNameResolverProvider(context))
+          			.usePlaintext()
+          			.build();
+```
+
+方式二：使用gRPC-java-polaris 封装过的 **PolarisManagedChannelBuilder**
+
 ```
 ManagedChannel channel = PolarisManagedChannelBuilder.forTarget("polaris://grpc-demo-java:8080?namespace=default")
         .usePlaintext().build();

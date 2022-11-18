@@ -136,6 +136,10 @@ public class PolarisPicker extends SubchannelPicker {
 
     Instance doLoadBalance(ServiceInstances serviceInstances) {
 
+        if (serviceInstances.getInstances().size() == 1) {
+            return serviceInstances.getInstances().get(0);
+        }
+
         ProcessLoadBalanceRequest request = new ProcessLoadBalanceRequest();
         request.setDstInstances(serviceInstances);
 
@@ -163,29 +167,6 @@ public class PolarisPicker extends SubchannelPicker {
         ProcessRoutersResponse response = routerAPI.processRouters(request);
 
         return response.getServiceInstances();
-    }
-
-    private GetOneInstanceRequest createGetOneRequest(String targetNamespace, String targetService,
-            PickSubchannelArgs args) {
-        final ServiceKey target = new ServiceKey(targetNamespace, targetService);
-
-        final GetOneInstanceRequest request = new GetOneInstanceRequest();
-        request.setNamespace(targetNamespace);
-        request.setService(targetService);
-
-        final ServiceInfo serviceInfo = new ServiceInfo();
-        ServiceKey source = null;
-
-        if (Objects.nonNull(sourceService)) {
-            request.setMetadata(sourceService.getMetadata());
-            source = new ServiceKey(sourceService.getNamespace(), sourceService.getService());
-            serviceInfo.setNamespace(sourceService.getNamespace());
-            serviceInfo.setService(sourceService.getService());
-        }
-        serviceInfo.setMetadata(collectRoutingLabels(loadRouteRule(target, source), args.getHeaders()));
-        request.setServiceInfo(serviceInfo);
-
-        return request;
     }
 
     private Map<String, String> collectRoutingLabels(List<Route> routes, Metadata headers) {
