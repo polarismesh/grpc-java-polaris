@@ -17,50 +17,47 @@
 package com.tencent.polaris.grpc.loadbalance;
 
 import com.google.common.base.Preconditions;
-import com.google.common.base.Predicate;
 import com.tencent.polaris.api.core.ConsumerAPI;
 import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.pojo.DefaultServiceInstances;
 import com.tencent.polaris.api.pojo.Instance;
+import com.tencent.polaris.api.pojo.RouteArgument;
 import com.tencent.polaris.api.pojo.ServiceEventKey.EventType;
 import com.tencent.polaris.api.pojo.ServiceInfo;
 import com.tencent.polaris.api.pojo.ServiceInstances;
 import com.tencent.polaris.api.pojo.ServiceKey;
-import com.tencent.polaris.api.rpc.GetOneInstanceRequest;
+import com.tencent.polaris.api.pojo.SourceService;
 import com.tencent.polaris.api.rpc.GetServiceRuleRequest;
-import com.tencent.polaris.api.rpc.InstancesResponse;
 import com.tencent.polaris.api.rpc.ServiceRuleResponse;
-import com.tencent.polaris.client.pb.RoutingProto.Route;
-import com.tencent.polaris.client.pb.RoutingProto.Routing;
-import com.tencent.polaris.client.pb.RoutingProto.Source;
-import com.tencent.polaris.factory.api.RouterAPIFactory;
+import com.tencent.polaris.api.utils.StringUtils;
+import com.tencent.polaris.client.api.SDKContext;
 import com.tencent.polaris.grpc.util.ClientCallInfo;
 import com.tencent.polaris.grpc.util.Common;
 import com.tencent.polaris.grpc.util.PolarisHelper;
-import com.tencent.polaris.plugins.router.metadata.MetadataRouter;
 import com.tencent.polaris.router.api.core.RouterAPI;
 import com.tencent.polaris.router.api.rpc.ProcessLoadBalanceRequest;
 import com.tencent.polaris.router.api.rpc.ProcessLoadBalanceResponse;
 import com.tencent.polaris.router.api.rpc.ProcessRoutersRequest;
-import com.tencent.polaris.router.api.rpc.ProcessRoutersRequest.RouterNamesGroup;
 import com.tencent.polaris.router.api.rpc.ProcessRoutersResponse;
+import com.tencent.polaris.specification.api.v1.traffic.manage.RoutingProto.Route;
+import com.tencent.polaris.specification.api.v1.traffic.manage.RoutingProto.Routing;
+import com.tencent.polaris.specification.api.v1.traffic.manage.RoutingProto.Source;
 import io.grpc.Attributes;
 import io.grpc.LoadBalancer.PickResult;
 import io.grpc.LoadBalancer.PickSubchannelArgs;
 import io.grpc.LoadBalancer.Subchannel;
 import io.grpc.LoadBalancer.SubchannelPicker;
 import io.grpc.Metadata;
+import io.grpc.Metadata.Key;
 import io.grpc.Status;
 
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.function.BiConsumer;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
@@ -80,6 +77,8 @@ public class PolarisPicker extends SubchannelPicker {
 
     private final Map<PolarisSubChannel, PolarisSubChannel> channels;
 
+    private final SDKContext context;
+
     private final ConsumerAPI consumerAPI;
 
     private final Attributes attributes;
@@ -88,8 +87,13 @@ public class PolarisPicker extends SubchannelPicker {
 
     private final RouterAPI routerAPI;
 
-    public PolarisPicker(final Map<PolarisSubChannel, PolarisSubChannel> channels, final ConsumerAPI consumerAPI,
-            final RouterAPI routerAPI, final ServiceInfo sourceService, final Attributes attributes) {
+    public PolarisPicker(final Map<PolarisSubChannel, PolarisSubChannel> channels,
+                         final SDKContext context,
+                         final ConsumerAPI consumerAPI,
+                         final RouterAPI routerAPI,
+                         final ServiceInfo sourceService,
+                         final Attributes attributes) {
+        this.context = context;
         this.channels = channels;
         this.consumerAPI = consumerAPI;
         this.routerAPI = routerAPI;
@@ -153,7 +157,7 @@ public class PolarisPicker extends SubchannelPicker {
         ProcessRoutersRequest request = new ProcessRoutersRequest();
         request.setDstInstances(serviceInstances);
 
-        final ServiceInfo serviceInfo = new ServiceInfo();
+        final SourceService serviceInfo = new SourceService();
         ServiceKey source = null;
         if (Objects.nonNull(sourceService)) {
             source = new ServiceKey(sourceService.getNamespace(), sourceService.getService());
@@ -161,7 +165,7 @@ public class PolarisPicker extends SubchannelPicker {
             serviceInfo.setService(sourceService.getService());
         }
 
-        serviceInfo.setMetadata(collectRoutingLabels(loadRouteRule(target, source), args.getHeaders()));
+        serviceInfo.setArguments(collectRoutingLabels(loadRouteRule(target, source), args));
         request.setSourceService(serviceInfo);
 
         ProcessRoutersResponse response = routerAPI.processRouters(request);
@@ -169,26 +173,37 @@ public class PolarisPicker extends SubchannelPicker {
         return response.getServiceInstances();
     }
 
-    private Map<String, String> collectRoutingLabels(List<Route> routes, Metadata headers) {
+    private Set<RouteArgument> collectRoutingLabels(List<Route> routes, PickSubchannelArgs args) {
         Set<String> labelKeys = new HashSet<>();
-
         routes.forEach(route -> {
             for (Source source : route.getSourcesList()) {
                 labelKeys.addAll(source.getMetadataMap().keySet());
             }
         });
 
-        Map<String, String> finalLabels = new HashMap<>();
+        final Set<RouteArgument> arguments = new HashSet<>();
+        final Metadata headers = args.getHeaders();
 
-        PolarisHelper.autoCollectLabels(headers, finalLabels, labelKeys);
+        labelKeys.forEach(labelKey -> {
+            if (StringUtils.equals(labelKey, RouteArgument.LABEL_KEY_PATH)) {
+                arguments.add(RouteArgument.buildPath(args.getMethodDescriptor().getFullMethodName()));
+                return;
+            }
+            if (labelKey.startsWith(RouteArgument.LABEL_KEY_HEADER)) {
+                String headerKey = labelKey.substring(RouteArgument.LABEL_KEY_HEADER.length() + 1);
+                arguments.add(RouteArgument.buildHeader(headerKey, headers.get(Key.of(headerKey, Metadata.ASCII_STRING_MARSHALLER))));
+                return;
+            }
+            if (labelKey.startsWith(RouteArgument.LABEL_KEY_CALLER_IP)) {
+                arguments.add(RouteArgument.buildCallerIP(context.getConfig().getGlobal().getAPI().getBindIP()));
+            }
+        });
 
-        Map<String, String> customerLabels = PolarisHelper.getLabelsInject().injectRoutingLabels(headers);
-        finalLabels.putAll(customerLabels);
-        return finalLabels;
+        final Set<RouteArgument> finalArguments = PolarisHelper.getLabelsInject().modifyRoute(new HashSet<>(arguments));
+        return finalArguments;
     }
 
     private List<Route> loadRouteRule(ServiceKey target, ServiceKey source) {
-
         List<Route> rules = new ArrayList<>();
 
         GetServiceRuleRequest inBoundReq = new GetServiceRuleRequest();

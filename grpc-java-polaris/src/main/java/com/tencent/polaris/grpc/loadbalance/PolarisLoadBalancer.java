@@ -54,6 +54,8 @@ public class PolarisLoadBalancer extends LoadBalancer {
 
     private static final Status EMPTY_OK = Status.OK.withDescription("no subChannels ready");
 
+    private final SDKContext context;
+
     private final ConsumerAPI consumerAPI;
 
     private final RouterAPI routerAPI;
@@ -95,6 +97,7 @@ public class PolarisLoadBalancer extends LoadBalancer {
     private ServiceInfo sourceService;
 
     public PolarisLoadBalancer(final SDKContext context, final Helper helper) {
+        this.context = context;
         this.consumerAPI = DiscoveryAPIFactory.createConsumerAPIByContext(context);
         this.routerAPI = RouterAPIFactory.createRouterAPIByContext(context);
         this.helper = Preconditions.checkNotNull(helper);
@@ -170,7 +173,8 @@ public class PolarisLoadBalancer extends LoadBalancer {
             }
             updateBalancingState(isConnecting ? CONNECTING : TRANSIENT_FAILURE, new EmptyPicker(aggStatus));
         } else {
-            updateBalancingState(READY, new PolarisPicker(activeList, this.consumerAPI, this.routerAPI, sourceService, holder.get()));
+            updateBalancingState(READY, new PolarisPicker(activeList, context, this.consumerAPI,
+                    this.routerAPI, sourceService, holder.get()));
         }
     }
 
