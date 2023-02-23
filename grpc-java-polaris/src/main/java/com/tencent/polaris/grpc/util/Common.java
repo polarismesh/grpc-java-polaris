@@ -19,24 +19,16 @@ package com.tencent.polaris.grpc.util;
 import com.tencent.polaris.api.pojo.Instance;
 import com.tencent.polaris.api.pojo.ServiceInfo;
 import io.grpc.Attributes.Key;
+import io.grpc.Metadata;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public class Common {
 
-    public static final String GRPC_HEADER_PREFIX = "grpc.header.";
+    public static final Metadata.Key<String> CALLER_SERVICE_KEY = Metadata.Key.of("polaris.request.caller.service", Metadata.ASCII_STRING_MARSHALLER);
 
-    public static final String GRPC_CONTEXT_PREFIX = "grpc.ctx.";
-
-    public static final String GRPC_SYSTEM_ENV_PREFIX = "sys.env.";
-
-
-    public static final int GRPC_HEADER_PREFIX_LEN = GRPC_HEADER_PREFIX.length();
-
-    public static final int GRPC_CONTEXT_PREFIX_LEN = GRPC_CONTEXT_PREFIX.length();
-
-    public static final int GRPC_SYSTEM_ENV_PREFIX_LEN = GRPC_SYSTEM_ENV_PREFIX.length();
+    public static final Metadata.Key<String> CALLER_NAMESPACE_KEY = Metadata.Key.of("polaris.request.caller.namespace", Metadata.ASCII_STRING_MARSHALLER);
 
     /**
      * {@link io.grpc.Attributes} 中存放 {@link Instance} 的 key

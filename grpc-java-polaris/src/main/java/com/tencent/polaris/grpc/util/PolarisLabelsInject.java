@@ -16,9 +16,12 @@
 
 package com.tencent.polaris.grpc.util;
 
+import com.tencent.polaris.api.pojo.RouteArgument;
+import com.tencent.polaris.ratelimit.api.rpc.Argument;
 import io.grpc.Metadata;
 
 import java.util.Map;
+import java.util.Set;
 
 /**
  * PolarisLabelsInject 针对每次流量的用户自定义标签注入
@@ -30,17 +33,17 @@ public interface PolarisLabelsInject {
     /**
      * 注入本次流量的路由标签信息
      *
-     * @param metadata {@link Metadata}
-     * @return {@link Map<String, String>}
+     * @param arguments {@link Set<RouteArgument>}
+     * @return {@link Set<RouteArgument>}
      */
-    Map<String, String> injectRoutingLabels(Metadata metadata);
+    Set<RouteArgument> modifyRoute(Set<RouteArgument> arguments);
 
     /**
      * 注入本次流量的限流标签信息
      *
-     * @param metadata {@link Metadata}
-     * @return {@link Map<String, String>}
+     * @param arguments {@link Set<Argument>}
+     * @return {@link Set<Argument>}
      */
-    Map<String, String> injectRateLimitLabels(Metadata metadata);
+    Set<Argument> modifyRateLimit(Set<Argument> arguments);
 
 }
