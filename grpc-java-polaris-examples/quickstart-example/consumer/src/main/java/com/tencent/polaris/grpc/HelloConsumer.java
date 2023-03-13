@@ -16,7 +16,10 @@
 
 package com.tencent.polaris.grpc;
 
+import com.tencent.polaris.api.core.ConsumerAPI;
+import com.tencent.polaris.api.core.ProviderAPI;
 import com.tencent.polaris.client.api.SDKContext;
+import com.tencent.polaris.factory.api.DiscoveryAPIFactory;
 import com.tencent.polaris.grpc.client.PolarisManagedChannelBuilder;
 import com.tencent.polaris.grpc.resolver.PolarisNameResolverProvider;
 import io.grpc.ManagedChannel;
@@ -34,6 +37,9 @@ public class HelloConsumer {
     
     public HelloConsumer() {
         SDKContext context = SDKContext.initContext();
+        ProviderAPI providerAPI = DiscoveryAPIFactory.createProviderAPIByContext(context);
+        ConsumerAPI consumerAPI = DiscoveryAPIFactory.createConsumerAPIByContext(context);
+
         NameResolverRegistry.getDefaultRegistry().register(new PolarisNameResolverProvider(context));
         channel = ManagedChannelBuilder.forTarget("polaris://DiscoverServerGRPCJava")
                 .usePlaintext()

@@ -37,6 +37,9 @@ import io.grpc.ConnectivityStateInfo;
 import io.grpc.EquivalentAddressGroup;
 import io.grpc.LoadBalancer;
 import io.grpc.Status;
+
+import java.net.SocketAddress;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -44,8 +47,10 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
@@ -64,11 +69,11 @@ public class PolarisLoadBalancer extends LoadBalancer {
 
     private final AtomicReference<ConnectivityState> currentState = new AtomicReference<>(IDLE);
 
-    private final Map<EquivalentAddressGroup, PolarisSubChannel> subChannels = new ConcurrentHashMap<>();
+    private final Map<String, Tuple<EquivalentAddressGroup, PolarisSubChannel>> subChannels = new ConcurrentHashMap<>();
 
-    private final Function<EquivalentAddressGroup, PolarisSubChannel> function = new Function<EquivalentAddressGroup, PolarisSubChannel>() {
+    private final Function<EquivalentAddressGroup, Tuple<EquivalentAddressGroup, PolarisSubChannel>> function = new Function<EquivalentAddressGroup, Tuple<EquivalentAddressGroup, PolarisSubChannel>>() {
         @Override
-        public PolarisSubChannel apply(EquivalentAddressGroup addressGroup) {
+        public Tuple<EquivalentAddressGroup, PolarisSubChannel> apply(EquivalentAddressGroup addressGroup) {
 
             Attributes newAttributes = addressGroup.getAttributes().toBuilder()
                     .set(GrpcHelper.STATE_INFO, new GrpcHelper.Ref<>(ConnectivityStateInfo.forNonError(IDLE)))
@@ -82,7 +87,8 @@ public class PolarisLoadBalancer extends LoadBalancer {
             subChannel.start(state -> processSubChannelState(subChannel, state));
             subChannel.requestConnection();
 
-            return new PolarisSubChannel(subChannel, newAttributes.get(Common.INSTANCE_KEY));
+            PolarisSubChannel channel = new PolarisSubChannel(subChannel, newAttributes.get(Common.INSTANCE_KEY));
+            return new Tuple<>(addressGroup, channel);
         }
     };
 
@@ -105,7 +111,7 @@ public class PolarisLoadBalancer extends LoadBalancer {
 
     @Override
     public void handleResolvedAddresses(ResolvedAddresses resolvedAddresses) {
-        if (sourceService == null) {
+        if (Objects.isNull(sourceService)) {
             this.sourceService = resolvedAddresses.getAttributes().get(Common.SOURCE_SERVICE_INFO);
         }
 
@@ -115,13 +121,16 @@ public class PolarisLoadBalancer extends LoadBalancer {
             return;
         }
 
-        Set<EquivalentAddressGroup> removed = GrpcHelper.setsDifference(subChannels.keySet(), new HashSet<>(servers));
+        Map<String, EquivalentAddressGroup> serversMap = servers.stream().collect(HashMap::new, (m, e) -> {
+            m.put(buildKey(e), e);
+        }, HashMap::putAll);
+        Set<String> removed = GrpcHelper.setsDifference(subChannels.keySet(), serversMap.keySet());
         for (EquivalentAddressGroup addressGroup : servers) {
-            subChannels.computeIfAbsent(addressGroup, function);
+            subChannels.computeIfAbsent(buildKey(addressGroup), s -> function.apply(addressGroup));
         }
 
         removed.forEach(entry -> {
-            Subchannel channel = subChannels.remove(entry);
+            Subchannel channel = subChannels.remove(entry).getB();
             GrpcHelper.shutdownSubChannel(channel);
         });
 
@@ -135,7 +144,11 @@ public class PolarisLoadBalancer extends LoadBalancer {
     }
 
     private void processSubChannelState(Subchannel subChannel, ConnectivityStateInfo stateInfo) {
-        PolarisSubChannel channel = subChannels.get(subChannel.getAddresses());
+        Tuple<EquivalentAddressGroup, PolarisSubChannel> tuple = subChannels.get(buildKey(subChannel.getAddresses()));
+        if (Objects.isNull(tuple)) {
+            return;
+        }
+        PolarisSubChannel channel = tuple.getB();
         if (Objects.isNull(channel) || channel.getChannel() != subChannel) {
             return;
         }
@@ -162,7 +175,8 @@ public class PolarisLoadBalancer extends LoadBalancer {
         if (activeList.isEmpty()) {
             boolean isConnecting = false;
             Status aggStatus = EMPTY_OK;
-            for (Subchannel subchannel : subChannels.values()) {
+            for (Tuple<EquivalentAddressGroup, PolarisSubChannel> tuple: subChannels.values()) {
+                Subchannel subchannel = tuple.getB();
                 ConnectivityStateInfo stateInfo = GrpcHelper.getSubChannelStateInfoRef(subchannel).getValue();
                 if (stateInfo.getState() == CONNECTING || stateInfo.getState() == IDLE) {
                     isConnecting = true;
@@ -188,6 +202,32 @@ public class PolarisLoadBalancer extends LoadBalancer {
     @Override
     public void shutdown() {
 
+    }
+
+    private String buildKey(EquivalentAddressGroup group) {
+        StringBuilder builder = new StringBuilder();
+        builder.append(group.getAttributes().get(Common.TARGET_NAMESPACE_KEY));
+        builder.append(group.getAttributes().get(Common.TARGET_SERVICE_KEY));
+        group.getAddresses().forEach(builder::append);
+        return builder.toString();
+    }
+
+    public static class Tuple<A, B> {
+        private final A a;
+        private final B b;
+
+        public Tuple(A a, B b) {
+            this.a = a;
+            this.b = b;
+        }
+
+        public A getA() {
+            return a;
+        }
+
+        public B getB() {
+            return b;
+        }
     }
 
 }

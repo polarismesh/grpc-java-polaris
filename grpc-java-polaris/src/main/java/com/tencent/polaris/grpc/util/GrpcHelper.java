@@ -21,6 +21,7 @@ import static io.grpc.ConnectivityState.READY;
 import static io.grpc.ConnectivityState.SHUTDOWN;
 
 import com.tencent.polaris.api.utils.StringUtils;
+import com.tencent.polaris.grpc.loadbalance.PolarisLoadBalancer.Tuple;
 import com.tencent.polaris.grpc.loadbalance.PolarisSubChannel;
 import io.grpc.Attributes;
 import io.grpc.ConnectivityStateInfo;
@@ -89,13 +90,14 @@ public class GrpcHelper {
     }
 
     public static Map<PolarisSubChannel, PolarisSubChannel> filterNonFailingSubChannels(
-            Map<EquivalentAddressGroup, PolarisSubChannel> subChannels, AtomicReference<Attributes> attributeHolder) {
+            Map<String, Tuple<EquivalentAddressGroup, PolarisSubChannel>> subChannels, AtomicReference<Attributes> attributeHolder) {
         Map<PolarisSubChannel, PolarisSubChannel> readySubChannels = new HashMap<>();
 
         subChannels.forEach((key, val) -> {
-            if (isReady(val)) {
-                attributeHolder.set(val.getAttributes());
-                readySubChannels.put(val, val);
+            PolarisSubChannel channel = val.getB();
+            if (isReady(channel)) {
+                attributeHolder.set(channel.getAttributes());
+                readySubChannels.put(channel, channel);
             }
         });
 

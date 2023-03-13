@@ -26,6 +26,9 @@ import io.grpc.Status;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -41,7 +44,7 @@ public class PolarisClientStreamTracer extends ClientStreamTracer {
 
     private final ClientCallInfo info;
 
-    private final long startTime = System.currentTimeMillis();
+    private final Map<Integer, Long> perStreamRequestStartTimes = new ConcurrentHashMap<Integer, Long>();
 
     private final AtomicBoolean reported = new AtomicBoolean(false);
 
@@ -58,40 +61,17 @@ public class PolarisClientStreamTracer extends ClientStreamTracer {
         this.result.setService(callInfo.getTargetService());
     }
 
-    /**
-     * Stream is closed.  This will be called exactly once.
-     */
     @Override
-    public void streamClosed(Status status) {
-        if (!reported.compareAndSet(false, true)) {
-            return;
-        }
-
-        this.result.setRetStatus(status.isOk() ? RetStatus.RetSuccess : RetStatus.RetFail);
-        this.result.setRetCode(status.getCode().value());
-        this.result.setDelay(System.currentTimeMillis() - startTime);
-
-        try {
-            this.info.getConsumerAPI().updateServiceCallResult(result);
-        } catch (PolarisException e) {
-            LOG.error("[grpc-polaris] do report invoke call ret fail in streamClosed", e);
-        }
+    public void outboundMessage(int seqNo) {
+        perStreamRequestStartTimes.put(seqNo, System.currentTimeMillis());
     }
 
-    /**
-     * An inbound message has been fully read from the transport.
-     *
-     * @param seqNo the sequential number of the message within the stream, starting from 0.  It can
-     *              be used to correlate with {@link #inboundMessage(int)} for the same message.
-     * @param optionalWireSize the wire size of the message. -1 if unknown
-     * @param optionalUncompressedSize the uncompressed serialized size of the message. -1 if unknown
-     */
     @Override
-    public void inboundMessageRead(int seqNo, long optionalWireSize, long optionalUncompressedSize) {
-        if (!reported.compareAndSet(false, true)) {
+    public void inboundMessage(int seqNo) {
+        Long startTime = perStreamRequestStartTimes.get(seqNo);
+        if (Objects.isNull(startTime)) {
             return;
         }
-
         this.result.setRetStatus(RetStatus.RetSuccess);
         this.result.setRetCode(Status.OK.getCode().value());
         this.result.setDelay(System.currentTimeMillis() - startTime);
@@ -102,6 +82,5 @@ public class PolarisClientStreamTracer extends ClientStreamTracer {
             LOG.error("[grpc-polaris] do report invoke call ret fail in inboundMessageRead", e);
         }
     }
-
 
 }
