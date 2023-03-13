@@ -16,12 +16,9 @@
 
 package com.tencent.polaris.grpc;
 
-import com.tencent.polaris.grpc.server.GraceOffline;
 import com.tencent.polaris.grpc.server.PolarisGrpcServerBuilder;
 import com.tencent.polaris.grpc.util.JvmHookHelper;
 import io.grpc.Server;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 
 /**
  * @author lixiaoshuang

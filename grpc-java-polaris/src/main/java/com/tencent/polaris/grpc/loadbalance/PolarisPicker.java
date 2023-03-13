@@ -199,8 +199,7 @@ public class PolarisPicker extends SubchannelPicker {
             }
         });
 
-        final Set<RouteArgument> finalArguments = PolarisHelper.getLabelsInject().modifyRoute(new HashSet<>(arguments));
-        return finalArguments;
+        return PolarisHelper.getLabelsInject().modifyRoute(new HashSet<>(arguments));
     }
 
     private List<Route> loadRouteRule(ServiceKey target, ServiceKey source) {
