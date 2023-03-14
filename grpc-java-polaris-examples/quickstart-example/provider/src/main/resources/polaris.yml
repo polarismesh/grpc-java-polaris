@@ -6,4 +6,5 @@ global:
     enable: true
     plugin:
       prometheus:
+        type: pull
         port: 0

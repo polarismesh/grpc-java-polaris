@@ -49,7 +49,7 @@ public class GrpcHelper {
 
     public static final class Ref<T> {
 
-        T value;
+        volatile T value;
 
         public Ref(T value) {
             this.value = value;
@@ -102,24 +102,5 @@ public class GrpcHelper {
         });
 
         return readySubChannels;
-    }
-
-
-    public static Map<String, String> collectLabels(Metadata headers, Predicate<String> predicate) {
-        Map<String, String> labels = new HashMap<>();
-
-        Metadata.AsciiMarshaller<String> marshaller = Metadata.ASCII_STRING_MARSHALLER;
-
-        Set<String> keys = headers.keys();
-        for (String key : keys) {
-            if (predicate.test(key)) {
-                Key<String> headerKey = Key.of(key, marshaller);
-                if (headers.containsKey(headerKey)) {
-                    labels.put(key.toLowerCase(), headers.get(headerKey));
-                }
-            }
-        }
-
-        return labels;
     }
 }

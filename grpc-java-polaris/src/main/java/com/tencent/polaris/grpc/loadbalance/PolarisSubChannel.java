@@ -38,7 +38,7 @@ public class PolarisSubChannel extends Subchannel implements Instance {
 
     private final Subchannel channel;
 
-    private final Instance instance;
+    private volatile Instance instance;
 
     PolarisSubChannel(Instance instance) {
         Preconditions.checkNotNull(instance, "instance");
@@ -50,6 +50,11 @@ public class PolarisSubChannel extends Subchannel implements Instance {
         Preconditions.checkNotNull(channel, "channel");
         Preconditions.checkNotNull(instance, "instance");
         this.channel = channel;
+        this.instance = instance;
+    }
+
+    public void setInstance(Instance instance) {
+        Preconditions.checkNotNull(instance, "instance");
         this.instance = instance;
     }
 

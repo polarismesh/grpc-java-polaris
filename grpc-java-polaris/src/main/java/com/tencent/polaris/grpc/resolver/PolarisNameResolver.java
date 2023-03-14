@@ -19,6 +19,7 @@ package com.tencent.polaris.grpc.resolver;
 import com.tencent.polaris.api.core.ConsumerAPI;
 import com.tencent.polaris.api.listener.ServiceListener;
 import com.tencent.polaris.api.pojo.Instance;
+import com.tencent.polaris.api.pojo.RouteArgument;
 import com.tencent.polaris.api.pojo.ServiceChangeEvent;
 import com.tencent.polaris.api.pojo.ServiceInfo;
 import com.tencent.polaris.api.pojo.ServiceInstances;
@@ -27,18 +28,27 @@ import com.tencent.polaris.api.rpc.InstancesResponse;
 import com.tencent.polaris.api.rpc.UnWatchServiceRequest;
 import com.tencent.polaris.api.rpc.WatchServiceRequest;
 import com.tencent.polaris.client.api.SDKContext;
+import com.tencent.polaris.factory.api.RouterAPIFactory;
 import com.tencent.polaris.grpc.util.Common;
 import com.tencent.polaris.grpc.util.NetworkHelper;
+import com.tencent.polaris.router.api.core.RouterAPI;
+import com.tencent.polaris.router.api.rpc.ProcessRoutersRequest;
 import io.grpc.Attributes;
 import io.grpc.EquivalentAddressGroup;
 import io.grpc.NameResolver;
+
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.util.Base64;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.ServiceLoader;
+import java.util.Set;
 import java.util.stream.Collectors;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import shade.polaris.com.google.gson.Gson;
@@ -124,8 +134,8 @@ public class PolarisNameResolver extends NameResolver {
             }
 
             listener.onResult(ResolutionResult.newBuilder()
-                            .setAddresses(equivalentAddressGroups)
-                            .setAttributes(builder.build())
+                    .setAddresses(equivalentAddressGroups)
+                    .setAttributes(builder.build())
                     .build());
         }
     }
