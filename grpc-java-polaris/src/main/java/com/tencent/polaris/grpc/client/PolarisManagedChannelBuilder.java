@@ -90,7 +90,6 @@ public class PolarisManagedChannelBuilder {
     }
 
     public PolarisManagedChannelBuilder intercept(List<ClientInterceptor> interceptors) {
-
         for (ClientInterceptor interceptor : interceptors) {
             if (interceptor instanceof PolarisClientInterceptor) {
                 this.polarisInterceptors.add((PolarisClientInterceptor) interceptor);

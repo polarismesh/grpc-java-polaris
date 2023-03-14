@@ -125,8 +125,18 @@ public class PolarisLoadBalancer extends LoadBalancer {
             m.put(buildKey(e), e);
         }, HashMap::putAll);
         Set<String> removed = GrpcHelper.setsDifference(subChannels.keySet(), serversMap.keySet());
-        for (EquivalentAddressGroup addressGroup : servers) {
-            subChannels.computeIfAbsent(buildKey(addressGroup), s -> function.apply(addressGroup));
+
+        synchronized (subChannels) {
+            for (EquivalentAddressGroup addressGroup : servers) {
+                String key = buildKey(addressGroup);
+                if (subChannels.containsKey(key)) {
+                    Tuple<EquivalentAddressGroup, PolarisSubChannel> value = subChannels.get(key);
+                    // 更新实例的状态信息到 SubChannel 中
+                    value.getB().setInstance(addressGroup.getAttributes().get(Common.INSTANCE_KEY));
+                } else {
+                    subChannels.put(key, function.apply(addressGroup));
+                }
+            }
         }
 
         removed.forEach(entry -> {

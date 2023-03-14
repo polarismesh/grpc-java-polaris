@@ -41,20 +41,7 @@ public class ConsumerServer {
     public static final HelloConsumer HELLO_CONSUMER = new HelloConsumer();
 
     public static void main(String[] args) throws Exception {
-        log.info("http server start on port 40041");
-
-        for (int i = 0; i < 10; i ++) {
-            AtomicInteger holder = new AtomicInteger(i);
-            Executors.newSingleThreadScheduledExecutor().scheduleWithFixedDelay(() -> {
-               try {
-                   String response = ConsumerServer.HELLO_CONSUMER.hello("consumer-" + holder.get());
-                   System.out.println("receive resp : " + response);
-               } catch (Exception e) {
-                   e.printStackTrace();
-               }
-            }, 200, 200, TimeUnit.MILLISECONDS);
-        }
-
+        log.info("http server start on port 50041");
         HttpServer httpServer = HttpServer.create(new InetSocketAddress(50041), 0);
         httpServer.createContext("/echo", new ConsumerHttpHandler());
         httpServer.setExecutor(Executors.newFixedThreadPool(10));
@@ -86,13 +73,9 @@ class ConsumerHttpHandler implements HttpHandler {
      * Processing response
      */
     private void handleResponse(HttpExchange httpExchange, String responseContent) throws Exception {
-        log.info("");
         byte[] responseContentByte = responseContent.getBytes(StandardCharsets.UTF_8);
-        
         httpExchange.getResponseHeaders().add("Content-Type:", "text/plain;charset=utf-8");
-        
         httpExchange.sendResponseHeaders(200, responseContentByte.length);
-        
         OutputStream out = httpExchange.getResponseBody();
         out.write(responseContentByte);
         out.flush();
