@@ -18,6 +18,7 @@ package com.tencent.polaris.grpc;
 
 import com.sun.net.httpserver.Headers;
 import com.tencent.polaris.api.pojo.ServiceInfo;
+import com.tencent.polaris.api.pojo.ServiceKey;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.grpc.client.PolarisManagedChannelBuilder;
 import io.grpc.ManagedChannel;
@@ -36,9 +37,7 @@ public class GatewayConsumer {
     private final ManagedChannel channel;
 
     public GatewayConsumer() {
-        final ServiceInfo sourceService = new ServiceInfo();
-        sourceService.setNamespace("grayrelease");
-        sourceService.setService("GatewayServer");
+        final ServiceKey sourceService = new ServiceKey("grayrelease", "GatewayServer");
         channel = PolarisManagedChannelBuilder.forTarget("polaris://FrontendServer?namespace=grayrelease", sourceService)
                 .usePlaintext()
                 .build();

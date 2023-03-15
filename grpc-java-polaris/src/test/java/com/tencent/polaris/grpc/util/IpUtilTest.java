@@ -16,15 +16,15 @@
 
 package com.tencent.polaris.grpc.util;
 
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import org.junit.Test;
 
-import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
  * @author lixiaoshuang
  */
 public class IpUtilTest {
-    
+
     @Test
     public void testGetLocalHostExactAddress() {
         String localHost = NetworkHelper.getLocalHostExactAddress();

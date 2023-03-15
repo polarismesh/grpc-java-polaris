@@ -23,6 +23,7 @@ import com.tencent.polaris.api.pojo.RouteArgument;
 import com.tencent.polaris.api.pojo.ServiceChangeEvent;
 import com.tencent.polaris.api.pojo.ServiceInfo;
 import com.tencent.polaris.api.pojo.ServiceInstances;
+import com.tencent.polaris.api.pojo.ServiceKey;
 import com.tencent.polaris.api.rpc.GetHealthyInstancesRequest;
 import com.tencent.polaris.api.rpc.InstancesResponse;
 import com.tencent.polaris.api.rpc.UnWatchServiceRequest;
@@ -39,16 +40,20 @@ import io.grpc.NameResolver;
 
 import java.net.InetSocketAddress;
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.ServiceLoader;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
+import org.checkerframework.checker.units.qual.A;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import shade.polaris.com.google.gson.Gson;
@@ -70,25 +75,30 @@ public class PolarisNameResolver extends NameResolver {
 
     private final String service;
 
+    private final URI targetUri;
+
     private ServiceChangeWatcher watcher;
 
     private final SDKContext context;
 
     private Listener2 listener;
 
-    private ServiceInfo sourceService;
+    private ServiceKey sourceService;
+
+    private final List<ResolverInterceptor> interceptors = new ArrayList<>();
 
     public PolarisNameResolver(URI targetUri, SDKContext context, ConsumerAPI consumerAPI) {
+        this.targetUri = targetUri;
         Map<String, String> params = NetworkHelper.getUrlParams(targetUri.getQuery());
-
         this.service = targetUri.getHost();
         this.namespace = params.get("namespace") == null ? DEFAULT_NAMESPACE : params.get("namespace");
         this.context = context;
         this.consumerAPI = consumerAPI;
-
+        ServiceLoader.load(ResolverInterceptor.class).iterator().forEachRemaining(interceptors::add);
+        interceptors.sort(Comparator.comparingInt(ResolverInterceptor::priority));
         if (params.containsKey("extend_info")) {
             this.sourceService = new Gson().fromJson(new String(Base64.getUrlDecoder().decode(params.get("extend_info"))),
-                    ServiceInfo.class);
+                    ServiceKey.class);
         }
     }
 
@@ -99,15 +109,33 @@ public class PolarisNameResolver extends NameResolver {
 
     @Override
     public void start(Listener2 listener) {
+        this.listener = listener;
+        doResolve(listener);
+        doWatch(listener);
+    }
+
+    private void doResolve(Listener2 listener) {
+        ResolverContext resolverContext = ResolverContext.builder()
+                .context(context)
+                .targetUri(targetUri)
+                .sourceService(sourceService)
+                .build();
+        interceptors.forEach(resolverInterceptor ->resolverInterceptor.before(resolverContext));
+
         GetHealthyInstancesRequest request = new GetHealthyInstancesRequest();
         request.setNamespace(namespace);
         request.setService(service);
         InstancesResponse response = consumerAPI.getHealthyInstances(request);
         LOG.info("[grpc-polaris] namespace:{} service:{} instance size:{}", namespace, service,
                 response.getInstances().length);
-        this.listener = listener;
+
+        for (ResolverInterceptor interceptor : interceptors) {
+            response = interceptor.after(resolverContext, response);
+        }
+
+        LOG.info("[grpc-polaris] after namespace:{} service:{} instance size:{}", namespace, service,
+                response.getInstances().length);
         notifyListener(listener, response);
-        doWatch(listener);
     }
 
     private void doWatch(Listener2 listener) {
@@ -161,14 +189,7 @@ public class PolarisNameResolver extends NameResolver {
 
         @Override
         public void onEvent(ServiceChangeEvent event) {
-            LOG.info("[grpc-polaris] receive:{} service:{} final instance size:{}", namespace, service,
-                    event.getAllInstances().size());
-
-            GetHealthyInstancesRequest request = new GetHealthyInstancesRequest();
-            request.setNamespace(namespace);
-            request.setService(service);
-            InstancesResponse response = consumerAPI.getHealthyInstances(request);
-            notifyListener(listener, response);
+            doResolve(listener);
         }
 
     }

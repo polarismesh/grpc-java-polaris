@@ -14,22 +14,15 @@
  * the License.
  */
 
-package com.tencent.polaris.grpc.util;
+package com.tencent.polaris.grpc.resolver;
 
-import org.junit.Test;
+import com.tencent.polaris.api.rpc.InstancesResponse;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
+public interface ResolverInterceptor {
 
-/**
- * @author lixiaoshuang
- */
-public class JvmShutdownHookUtilTest {
-    
-    @Test
-    public void testAddHook() {
-        boolean result = JvmHookHelper.addShutdownHook(() -> {
-        });
-        
-        assertTrue(result);
-    }
+    void before(ResolverContext context);
+
+    InstancesResponse after(ResolverContext context, InstancesResponse response);
+
+    int priority();
 }

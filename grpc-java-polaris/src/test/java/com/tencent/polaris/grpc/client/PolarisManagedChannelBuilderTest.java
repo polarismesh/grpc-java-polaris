@@ -14,22 +14,22 @@
  * the License.
  */
 
-package com.tencent.polaris.grpc.util;
+package com.tencent.polaris.grpc.client;
 
+import org.junit.Before;
 import org.junit.Test;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
+public class PolarisManagedChannelBuilderTest {
 
-/**
- * @author lixiaoshuang
- */
-public class JvmShutdownHookUtilTest {
-    
-    @Test
-    public void testAddHook() {
-        boolean result = JvmHookHelper.addShutdownHook(() -> {
-        });
-        
-        assertTrue(result);
+
+    @Before
+    public void before() {
+        PolarisManagedChannelBuilder.resetSDKContext();
     }
+
+    @Test
+    public void testForTarget() {
+
+    }
+
 }

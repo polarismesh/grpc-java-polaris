@@ -19,14 +19,14 @@ package com.tencent.polaris.grpc.server;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import io.grpc.Server;
-import org.junit.jupiter.api.Test;
+import org.junit.Test;
 
 
 /**
  * @author lixiaoshuang
  */
 public class PolarisGrpcServerTest {
-    
+
     @Test
     public void testBuilder() {
         Server polarisGrpcServer =  PolarisGrpcServerBuilder.forPort(8888).applicationName("grpc-demo-java")

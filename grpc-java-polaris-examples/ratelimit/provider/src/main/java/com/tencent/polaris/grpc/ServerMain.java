@@ -38,6 +38,7 @@ public class ServerMain {
                 .namespace("default")
                 .applicationName("RateLimitServerGRPCJava")
                 // 注入限流的 server 拦截器
+                .host("127.0.0.1")
                 .intercept(PolarisHelper.buildRateLimitInterceptor()
                         .rateLimitCallback(callback)
                         .build())
