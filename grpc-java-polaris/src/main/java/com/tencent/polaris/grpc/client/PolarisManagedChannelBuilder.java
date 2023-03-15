@@ -43,6 +43,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import javax.annotation.Nullable;
 
 import shade.polaris.com.google.gson.Gson;
@@ -52,6 +53,7 @@ import shade.polaris.com.google.gson.Gson;
  */
 public class PolarisManagedChannelBuilder extends ManagedChannelBuilder<PolarisManagedChannelBuilder> {
 
+    private static final AtomicBoolean FIRST_INIT = new AtomicBoolean(false);
     private static final Object MONITOR = new Object();
 
     private static volatile SDKContext CONTEXT;
@@ -77,24 +79,33 @@ public class PolarisManagedChannelBuilder extends ManagedChannelBuilder<PolarisM
     }
 
     private PolarisManagedChannelBuilder(String target, ServiceKey sourceService, SDKContext context) {
-        synchronized (MONITOR) {
-            if (Objects.isNull(CONTEXT)) {
-                if (Objects.isNull(context)) {
-                    SDKContext c = SDKContext.initContext();
-                    JvmHookHelper.addShutdownHook(c::close);
-                    CONTEXT = c;
-                } else {
-                    CONTEXT = context;
-                }
-            } else {
-                if (Objects.equals(context, CONTEXT)) {
-                    throw new IllegalStateException("[Polaris] SDKContext already initialize");
-                }
+        if (FIRST_INIT.compareAndSet(false, true)) {
+            if (context == null) {
+                context = SDKContext.initContext();
+                JvmHookHelper.addShutdownHook(context::destroy);
+            }
+            PolarisLoadBalancerFactory.init(context);
+            PolarisNameResolverFactory.init(context);
+            CONTEXT = context;
+            synchronized (MONITOR) {
+                MONITOR.notifyAll();
             }
         }
+        SDKContext prev = CONTEXT;
+        if (prev == null) {
+            synchronized (MONITOR) {
+                try {
+                    MONITOR.wait();
+                } catch (InterruptedException e) {
+                    //noop
+                }
+                prev = CONTEXT;
+            }
+        }
+        if (context != null && prev != context) {
+            throw new IllegalStateException("[Polaris] SDKContext already initialize");
+        }
 
-        PolarisLoadBalancerFactory.init(CONTEXT);
-        PolarisNameResolverFactory.init(CONTEXT);
         this.builder = ManagedChannelBuilder.forTarget(buildUrl(target, sourceService));
         this.sourceService = sourceService;
     }
