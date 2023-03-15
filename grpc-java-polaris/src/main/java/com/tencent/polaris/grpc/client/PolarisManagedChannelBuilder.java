@@ -20,6 +20,7 @@ package com.tencent.polaris.grpc.client;
 import static com.tencent.polaris.grpc.loadbalance.PolarisLoadBalancerProvider.LOADBALANCER_PROVIDER;
 
 import com.tencent.polaris.api.pojo.ServiceInfo;
+import com.tencent.polaris.api.pojo.ServiceKey;
 import com.tencent.polaris.client.api.SDKContext;
 import com.tencent.polaris.grpc.interceptor.PolarisClientInterceptor;
 import com.tencent.polaris.grpc.loadbalance.PolarisLoadBalancerFactory;
@@ -64,9 +65,9 @@ public class PolarisManagedChannelBuilder {
 
     private final List<ClientInterceptor> interceptors = new ArrayList<>();
 
-    private final ServiceInfo sourceService;
+    private final ServiceKey sourceService;
 
-    private PolarisManagedChannelBuilder(String target, ServiceInfo sourceService) {
+    private PolarisManagedChannelBuilder(String target, ServiceKey sourceService) {
         this.builder = ManagedChannelBuilder.forTarget(buildUrl(target, sourceService));
         this.sourceService = sourceService;
     }
@@ -75,7 +76,7 @@ public class PolarisManagedChannelBuilder {
         return new PolarisManagedChannelBuilder(target, null);
     }
 
-    public static PolarisManagedChannelBuilder forTarget(String target, ServiceInfo sourceService) {
+    public static PolarisManagedChannelBuilder forTarget(String target, ServiceKey sourceService) {
         return new PolarisManagedChannelBuilder(target, sourceService);
     }
 
@@ -279,7 +280,7 @@ public class PolarisManagedChannelBuilder {
         return builder.build();
     }
 
-    private static String buildUrl(String target, ServiceInfo sourceService) {
+    private static String buildUrl(String target, ServiceKey sourceService) {
         if (Objects.isNull(sourceService)) {
             return target;
         }

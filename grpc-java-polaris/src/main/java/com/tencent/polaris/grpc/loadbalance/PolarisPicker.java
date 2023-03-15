@@ -43,6 +43,7 @@ import com.tencent.polaris.specification.api.v1.traffic.manage.RoutingProto.Rout
 import com.tencent.polaris.specification.api.v1.traffic.manage.RoutingProto.Routing;
 import com.tencent.polaris.specification.api.v1.traffic.manage.RoutingProto.Source;
 import io.grpc.Attributes;
+import io.grpc.Context;
 import io.grpc.LoadBalancer.PickResult;
 import io.grpc.LoadBalancer.PickSubchannelArgs;
 import io.grpc.LoadBalancer.Subchannel;
@@ -83,7 +84,7 @@ public class PolarisPicker extends SubchannelPicker {
 
     private final Attributes attributes;
 
-    private final ServiceInfo sourceService;
+    private final ServiceKey sourceService;
 
     private final RouterAPI routerAPI;
 
@@ -91,7 +92,7 @@ public class PolarisPicker extends SubchannelPicker {
                          final SDKContext context,
                          final ConsumerAPI consumerAPI,
                          final RouterAPI routerAPI,
-                         final ServiceInfo sourceService,
+                         final ServiceKey sourceService,
                          final Attributes attributes) {
         this.context = context;
         this.channels = channels;

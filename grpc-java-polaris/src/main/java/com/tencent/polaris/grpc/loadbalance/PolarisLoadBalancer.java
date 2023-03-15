@@ -24,6 +24,7 @@ import static io.grpc.ConnectivityState.TRANSIENT_FAILURE;
 import com.google.common.base.Preconditions;
 import com.tencent.polaris.api.core.ConsumerAPI;
 import com.tencent.polaris.api.pojo.ServiceInfo;
+import com.tencent.polaris.api.pojo.ServiceKey;
 import com.tencent.polaris.client.api.SDKContext;
 import com.tencent.polaris.factory.api.DiscoveryAPIFactory;
 import com.tencent.polaris.factory.api.RouterAPIFactory;
@@ -100,7 +101,7 @@ public class PolarisLoadBalancer extends LoadBalancer {
         return state != currentState.get();
     };
 
-    private ServiceInfo sourceService;
+    private ServiceKey sourceService;
 
     public PolarisLoadBalancer(final SDKContext context, final Helper helper) {
         this.context = context;

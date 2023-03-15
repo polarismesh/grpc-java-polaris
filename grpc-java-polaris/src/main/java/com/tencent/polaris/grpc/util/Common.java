@@ -18,6 +18,7 @@ package com.tencent.polaris.grpc.util;
 
 import com.tencent.polaris.api.pojo.Instance;
 import com.tencent.polaris.api.pojo.ServiceInfo;
+import com.tencent.polaris.api.pojo.ServiceKey;
 import io.grpc.Attributes.Key;
 import io.grpc.Metadata;
 
@@ -38,7 +39,7 @@ public class Common {
     /**
      *
      */
-    public static final Key<ServiceInfo> SOURCE_SERVICE_INFO = Key.create(ServiceInfo.class.getName());
+    public static final Key<ServiceKey> SOURCE_SERVICE_INFO = Key.create(ServiceKey.class.getName());
 
     /**
      * {@link io.grpc.Attributes} 中存放服务调用者的服务名称信息

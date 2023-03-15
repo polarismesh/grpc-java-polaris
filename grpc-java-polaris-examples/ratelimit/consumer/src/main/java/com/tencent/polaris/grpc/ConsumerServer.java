@@ -59,7 +59,7 @@ class ConsumerHttpHandler implements HttpHandler {
                 String[] split = paramStr.split("=");
                 param = split[1];
             }
-            String response = consumer.hello(param);
+            String response = consumer.hello(param, httpExchange.getRequestHeaders());
             handleResponse(httpExchange, response);
         } catch (Exception ex) {
             ex.printStackTrace();

@@ -16,9 +16,14 @@
 
 package com.tencent.polaris.grpc;
 
+import com.sun.net.httpserver.Headers;
 import com.tencent.polaris.grpc.client.PolarisManagedChannelBuilder;
 import io.grpc.ManagedChannel;
 import java.util.concurrent.Executors;
+
+import io.grpc.Metadata;
+import io.grpc.Metadata.Key;
+import io.grpc.stub.MetadataUtils;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -37,8 +42,13 @@ public class HelloConsumer {
                 .build();
     }
     
-    public String hello(String value) {
+    public String hello(String value, Headers headers) {
         HelloGrpc.HelloBlockingStub helloBlockingStub = HelloGrpc.newBlockingStub(channel);
+        Metadata metadata = new Metadata();
+        headers.forEach((s, val) -> {
+                metadata.put(Key.of(s, Metadata.ASCII_STRING_MARSHALLER), val.get(0));
+        });
+        helloBlockingStub = helloBlockingStub.withInterceptors(MetadataUtils.newAttachHeadersInterceptor(metadata));
         HelloPolaris.request request = HelloPolaris.request.newBuilder().setMsg(value).build();
         HelloPolaris.response response = helloBlockingStub.sayHello(request);
         System.out.println("grpc server response ---------> :" + response.getData());
