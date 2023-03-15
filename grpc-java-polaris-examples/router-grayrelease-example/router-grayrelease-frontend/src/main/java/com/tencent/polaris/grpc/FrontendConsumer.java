@@ -17,6 +17,7 @@
 package com.tencent.polaris.grpc;
 
 import com.tencent.polaris.api.pojo.ServiceInfo;
+import com.tencent.polaris.api.pojo.ServiceKey;
 import com.tencent.polaris.grpc.client.PolarisManagedChannelBuilder;
 import com.tencent.polaris.grpc.util.PolarisHelper;
 import io.grpc.ManagedChannel;
@@ -37,9 +38,7 @@ public class FrontendConsumer {
     private final ManagedChannel channel;
     
     public FrontendConsumer() {
-        final ServiceInfo sourceService = new ServiceInfo();
-        sourceService.setNamespace("grayrelease");
-        sourceService.setService("FrontendServer");
+        final ServiceKey sourceService = new ServiceKey("grayrelease", "FrontendServer");
         channel = PolarisManagedChannelBuilder.forTarget("polaris://MiddleServer?namespace=grayrelease", sourceService)
                 .usePlaintext()
                 .intercept(PolarisHelper.buildMetadataClientInterceptor())
