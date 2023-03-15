@@ -14,7 +14,6 @@
  * the License.
  */
 
-
 package com.tencent.polaris.grpc.client;
 
 import com.google.common.base.Preconditions;

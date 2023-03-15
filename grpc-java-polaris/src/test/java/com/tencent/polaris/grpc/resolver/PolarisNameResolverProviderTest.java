@@ -21,14 +21,14 @@ import io.grpc.NameResolver;
 import io.grpc.ProxiedSocketAddress;
 import io.grpc.ProxyDetector;
 import io.grpc.SynchronizationContext;
+import org.junit.Before;
+import org.junit.Test;
 
 import javax.annotation.Nullable;
 import java.net.SocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Map;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -39,7 +39,7 @@ public class PolarisNameResolverProviderTest {
     
     private PolarisNameResolverProvider polarisNameResolverProvider;
     
-    @BeforeEach
+    @Before
     public void setUp() {
         polarisNameResolverProvider = new PolarisNameResolverProvider(SDKContext.initContext());
     }

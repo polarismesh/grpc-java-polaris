@@ -16,38 +16,28 @@
 
 package com.tencent.polaris.grpc.resolver;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-import com.tencent.polaris.api.core.ConsumerAPI;
 import com.tencent.polaris.client.api.SDKContext;
-import io.grpc.NameResolver;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import com.tencent.polaris.factory.api.DiscoveryAPIFactory;
+import org.junit.Test;
 
 import java.net.URI;
-import java.net.URISyntaxException;
 
 /**
  * @author lixiaoshuang
  */
 public class PolarisNameResolverTest {
-    
-    private PolarisNameResolver polarisNameResolver;
 
-    private ConsumerAPI consumerAPI;
-
-    private NameResolver.Listener listener;
-
-    @BeforeEach
-    public void setUp() throws URISyntaxException {
-        URI targetUri = new URI("polaris://grpc-demo-java?namespace=default");
-        polarisNameResolver = new PolarisNameResolver(targetUri, SDKContext.initContext(), consumerAPI);
-    }
-    
     @Test
-    public void testGetServiceAuthority() {
+    public void testGetServiceAuthority() throws Exception {
+        SDKContext context = SDKContext.initContext();
+        URI targetUri = new URI("polaris://grpc-demo-java?namespace=default");
+        PolarisNameResolver polarisNameResolver = new PolarisNameResolver(targetUri, context, DiscoveryAPIFactory.createConsumerAPIByContext(context));
         String serviceAuthority = polarisNameResolver.getServiceAuthority();
         assertNotNull(serviceAuthority);
+        assertEquals("grpc-demo-java", serviceAuthority);
     }
 
 }

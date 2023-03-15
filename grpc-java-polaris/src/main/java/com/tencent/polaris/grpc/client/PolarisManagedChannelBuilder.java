@@ -19,6 +19,7 @@ package com.tencent.polaris.grpc.client;
 
 import static com.tencent.polaris.grpc.loadbalance.PolarisLoadBalancerProvider.LOADBALANCER_PROVIDER;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.tencent.polaris.api.pojo.ServiceKey;
 import com.tencent.polaris.client.api.SDKContext;
 import com.tencent.polaris.grpc.interceptor.PolarisClientInterceptor;
@@ -100,6 +101,11 @@ public class PolarisManagedChannelBuilder extends ManagedChannelBuilder<PolarisM
 
     public static SDKContext getSDKContext() {
         return CONTEXT;
+    }
+
+    @VisibleForTesting
+    static void resetSDKContext() {
+        CONTEXT = null;
     }
 
     public PolarisManagedChannelBuilder directExecutor() {
