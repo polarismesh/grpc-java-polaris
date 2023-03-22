@@ -1,5 +1,7 @@
 # gRPC-Java-Polaris
 
+[![codecov](https://codecov.io/gh/polarismesh/polaris-go/branch/main/graph/badge.svg?token=EK9174H91T)](https://codecov.io/gh/polarismesh/polaris-go)
+
 English | [简体中文](./README-zh.md)
 
 ## Introduction
