@@ -149,23 +149,21 @@ public class PolarisNameResolver extends NameResolver {
 
     private void notifyListener(Listener2 listener, InstancesResponse response) {
         ServiceInstances serviceInstances = response.toServiceInstances();
-        if (!serviceInstances.getInstances().isEmpty()) {
-            List<EquivalentAddressGroup> equivalentAddressGroups = serviceInstances.getInstances()
-                    .stream()
-                    .map(this::buildEquivalentAddressGroup)
-                    .collect(Collectors.toList());
+	List<EquivalentAddressGroup> equivalentAddressGroups = serviceInstances.getInstances()
+                .stream()
+                .map(this::buildEquivalentAddressGroup)
+                .collect(Collectors.toList());
 
-            Attributes.Builder builder = Attributes.newBuilder();
+        Attributes.Builder builder = Attributes.newBuilder();
 
-            if (sourceService != null) {
-                builder.set(Common.SOURCE_SERVICE_INFO, sourceService);
-            }
-
-            listener.onResult(ResolutionResult.newBuilder()
-                    .setAddresses(equivalentAddressGroups)
-                    .setAttributes(builder.build())
-                    .build());
+        if (sourceService != null) {
+            builder.set(Common.SOURCE_SERVICE_INFO, sourceService);
         }
+
+        listener.onResult(ResolutionResult.newBuilder()
+                .setAddresses(equivalentAddressGroups)
+                .setAttributes(builder.build())
+                .build());
     }
 
     @Override
