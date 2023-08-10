@@ -60,6 +60,8 @@ public final class PolarisGrpcServerBuilder extends ServerBuilder<PolarisGrpcSer
 
     private String host;
 
+    private String token;
+
     private DelayRegister delayRegister;
 
     private RegisterHook registerHook;
@@ -165,6 +167,17 @@ public final class PolarisGrpcServerBuilder extends ServerBuilder<PolarisGrpcSer
      */
     public PolarisGrpcServerBuilder host(String host) {
         this.host = host;
+        return this;
+    }
+
+    /**
+     * Set the token.
+     *
+     * @param token token
+     * @return PolarisGrpcServerBuilder
+     */
+    public PolarisGrpcServerBuilder token(String token) {
+        this.token = token;
         return this;
     }
 
@@ -303,6 +316,10 @@ public final class PolarisGrpcServerBuilder extends ServerBuilder<PolarisGrpcSer
 
     String getHost() {
         return host;
+    }
+
+    String getToken() {
+        return token;
     }
 
     SDKContext getContext() {

@@ -188,6 +188,7 @@ public class PolarisGrpcServer extends Server {
         request.setNamespace(builder.getNamespace());
         request.setService(serviceName);
         request.setHost(host);
+        request.setToken(builder.getToken());
         request.setVersion(builder.getVersion());
         request.setProtocol("grpc");
         request.setWeight(builder.getWeight());
