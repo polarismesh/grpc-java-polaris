@@ -66,14 +66,35 @@ public class PolarisManagedChannelBuilder extends ManagedChannelBuilder<PolarisM
 
     private final ServiceKey sourceService;
 
+    /**
+     * follow {@link ManagedChannelBuilder#forTarget(String)}
+     *
+     * @param target 服务名
+     * @return {@link PolarisManagedChannelBuilder}
+     */
     public static PolarisManagedChannelBuilder forTarget(String target) {
         return forTarget(target, null, null);
     }
 
+    /**
+     * 增强 {@link ManagedChannelBuilder#forTarget(String)}, 在连接到目标服务时允许设置主调服务的相关信息
+     *
+     * @param target 服务名
+     * @param sourceService {@link ServiceKey} 主调服务信息以及标签
+     * @return {@link PolarisManagedChannelBuilder}
+     */
     public static PolarisManagedChannelBuilder forTarget(String target, ServiceKey sourceService) {
         return new PolarisManagedChannelBuilder(target, sourceService, null);
     }
 
+    /**
+     * 增强 {@link ManagedChannelBuilder#forTarget(String)}, 在连接到目标服务时允许设置主调服务的相关信息, 并且可以自定义北极星 SDK 的核心数据结构 {@link SDKContext}
+     *
+     * @param target 服务名
+     * @param sourceService {@link ServiceKey} 主调服务信息以及标签
+     * @param sdkContext {@link SDKContext} 可以设置北极星 SDK 的相关配置以及行为, 例如服务治理中心地址等等
+     * @return {@link PolarisManagedChannelBuilder}
+     */
     public static PolarisManagedChannelBuilder forTarget(String target, ServiceKey sourceService, SDKContext sdkContext) {
         return new PolarisManagedChannelBuilder(target, sourceService, sdkContext);
     }

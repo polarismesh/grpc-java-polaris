@@ -105,11 +105,12 @@ public class PolarisGrpcServer extends Server {
     public Server shutdown() {
         if (shutdownOnce.compareAndSet(false, true)) {
             executorService.shutdownNow();
+            // 将自己从注册中心反注册掉
             this.deregister(targetServer.getServices());
             providerAPI.destroy();
         }
 
-        return new GraceOffline(targetServer, maxWaitDuration).shutdown();
+        return new GraceOffline(targetServer, maxWaitDuration, context).shutdown();
     }
 
     @Override
@@ -118,6 +119,7 @@ public class PolarisGrpcServer extends Server {
             executorService.shutdownNow();
             this.deregister(targetServer.getServices());
             providerAPI.destroy();
+            context.close();
         }
         return this.targetServer.shutdownNow();
     }
