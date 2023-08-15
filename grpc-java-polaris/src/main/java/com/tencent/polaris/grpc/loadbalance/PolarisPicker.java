@@ -140,7 +140,6 @@ public class PolarisPicker extends SubchannelPicker {
     }
 
     Instance doLoadBalance(ServiceInstances serviceInstances) {
-
         if (serviceInstances.getInstances().size() == 1) {
             return serviceInstances.getInstances().get(0);
         }
@@ -149,12 +148,10 @@ public class PolarisPicker extends SubchannelPicker {
         request.setDstInstances(serviceInstances);
 
         ProcessLoadBalanceResponse response = routerAPI.processLoadBalance(request);
-
         return response.getTargetInstance();
     }
 
     ServiceInstances doRoute(ServiceInstances serviceInstances, ServiceKey target, PickSubchannelArgs args) {
-
         ProcessRoutersRequest request = new ProcessRoutersRequest();
         request.setDstInstances(serviceInstances);
 

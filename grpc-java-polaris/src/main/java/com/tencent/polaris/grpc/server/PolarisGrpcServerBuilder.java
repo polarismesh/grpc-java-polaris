@@ -34,6 +34,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.Executor;
 import javax.annotation.Nullable;
 
@@ -77,7 +78,7 @@ public final class PolarisGrpcServerBuilder extends ServerBuilder<PolarisGrpcSer
 
     private final List<ServerInterceptor> interceptors = new ArrayList<>();
 
-    private final SDKContext context = SDKContext.initContext();
+    private SDKContext context;
 
     /**
      * Static factory for creating a new PolarisGrpcServerBuilder.
@@ -97,6 +98,17 @@ public final class PolarisGrpcServerBuilder extends ServerBuilder<PolarisGrpcSer
      */
     public PolarisGrpcServerBuilder(ServerBuilder<?> builder) {
         this.builder = builder;
+    }
+
+    /**
+     * Set polaris SDK Context
+     *
+     * @param context polaris sdk core object
+     * @return PolarisGrpcServerBuilder
+     */
+    public PolarisGrpcServerBuilder sdkContext(SDKContext context) {
+        this.context = context;
+        return this;
     }
     
     /**
@@ -136,7 +148,7 @@ public final class PolarisGrpcServerBuilder extends ServerBuilder<PolarisGrpcSer
      * set instance weight
      *
      * @param weight
-     * @return
+     * @return PolarisGrpcServerBuilder
      */
     public PolarisGrpcServerBuilder weight(int weight) {
         this.weight = weight;
@@ -290,6 +302,9 @@ public final class PolarisGrpcServerBuilder extends ServerBuilder<PolarisGrpcSer
     }
 
     private void setDefault() {
+        if (Objects.isNull(context)) {
+            context = SDKContext.initContext();
+        }
         if (StringUtils.isBlank(namespace)) {
             this.namespace = DEFAULT_NAMESPACE;
         }

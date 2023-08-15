@@ -16,6 +16,7 @@
 
 package com.tencent.polaris.grpc.server;
 
+import com.tencent.polaris.client.api.SDKContext;
 import io.grpc.Server;
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
@@ -34,10 +35,13 @@ public final class GraceOffline {
 
     private final Duration maxWaitDuration;
 
+    private final SDKContext context;
+
     private final AtomicBoolean executed = new AtomicBoolean(false);
 
-    public GraceOffline(Server server, Duration maxWaitDuration) {
+    public GraceOffline(Server server, Duration maxWaitDuration, SDKContext context) {
         this.grpcServer = server;
+        this.context = context;
         this.maxWaitDuration = maxWaitDuration;
     }
 
@@ -60,6 +64,7 @@ public final class GraceOffline {
         } catch (InterruptedException ignore) {
             Thread.currentThread().interrupt();
         }
+        context.close();
         return grpcServer;
     }
 
