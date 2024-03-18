@@ -17,8 +17,6 @@
 package com.tencent.polaris.grpc.client;
 
 
-import static com.tencent.polaris.grpc.loadbalance.PolarisLoadBalancerProvider.LOADBALANCER_PROVIDER;
-
 import com.google.common.annotations.VisibleForTesting;
 import com.tencent.polaris.api.pojo.ServiceKey;
 import com.tencent.polaris.client.api.SDKContext;
@@ -34,7 +32,9 @@ import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.NameResolver.Factory;
 import io.grpc.ProxyDetector;
+import shade.polaris.com.google.gson.Gson;
 
+import javax.annotation.Nullable;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Base64;
@@ -44,9 +44,8 @@ import java.util.Objects;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import javax.annotation.Nullable;
 
-import shade.polaris.com.google.gson.Gson;
+import static com.tencent.polaris.grpc.loadbalance.PolarisLoadBalancerProvider.LOADBALANCER_PROVIDER;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
@@ -79,7 +78,7 @@ public class PolarisManagedChannelBuilder extends ManagedChannelBuilder<PolarisM
     /**
      * 增强 {@link ManagedChannelBuilder#forTarget(String)}, 在连接到目标服务时允许设置主调服务的相关信息
      *
-     * @param target 服务名
+     * @param target        服务名
      * @param sourceService {@link ServiceKey} 主调服务信息以及标签
      * @return {@link PolarisManagedChannelBuilder}
      */
@@ -90,9 +89,9 @@ public class PolarisManagedChannelBuilder extends ManagedChannelBuilder<PolarisM
     /**
      * 增强 {@link ManagedChannelBuilder#forTarget(String)}, 在连接到目标服务时允许设置主调服务的相关信息, 并且可以自定义北极星 SDK 的核心数据结构 {@link SDKContext}
      *
-     * @param target 服务名
+     * @param target        服务名
      * @param sourceService {@link ServiceKey} 主调服务信息以及标签
-     * @param sdkContext {@link SDKContext} 可以设置北极星 SDK 的相关配置以及行为, 例如服务治理中心地址等等
+     * @param sdkContext    {@link SDKContext} 可以设置北极星 SDK 的相关配置以及行为, 例如服务治理中心地址等等
      * @return {@link PolarisManagedChannelBuilder}
      */
     public static PolarisManagedChannelBuilder forTarget(String target, ServiceKey sourceService, SDKContext sdkContext) {
@@ -220,8 +219,8 @@ public class PolarisManagedChannelBuilder extends ManagedChannelBuilder<PolarisM
         return this;
     }
 
+    @Deprecated
     public PolarisManagedChannelBuilder enableFullStreamDecompression() {
-        this.builder.enableFullStreamDecompression();
         return this;
     }
 
