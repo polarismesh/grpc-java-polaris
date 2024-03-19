@@ -20,6 +20,7 @@ import com.google.common.util.concurrent.MoreExecutors;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.client.api.SDKContext;
 import com.tencent.polaris.grpc.interceptor.PolarisServerInterceptor;
+import io.grpc.BinaryLog;
 import io.grpc.BindableService;
 import io.grpc.CompressorRegistry;
 import io.grpc.DecompressorRegistry;
@@ -28,7 +29,12 @@ import io.grpc.Server;
 import io.grpc.ServerBuilder;
 import io.grpc.ServerInterceptor;
 import io.grpc.ServerServiceDefinition;
+import io.grpc.ServerStreamTracer;
+import io.grpc.ServerTransportFilter;
+
+import javax.annotation.Nullable;
 import java.io.File;
+import java.io.InputStream;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -36,7 +42,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.Executor;
-import javax.annotation.Nullable;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
@@ -90,7 +96,7 @@ public final class PolarisGrpcServerBuilder extends ServerBuilder<PolarisGrpcSer
         ServerBuilder<?> builder = ServerBuilder.forPort(port);
         return new PolarisGrpcServerBuilder(builder);
     }
-    
+
     /**
      * PolarisGrpcServerBuilder Constructor.
      *
@@ -110,7 +116,7 @@ public final class PolarisGrpcServerBuilder extends ServerBuilder<PolarisGrpcSer
         this.context = context;
         return this;
     }
-    
+
     /**
      * Set grpc service name.
      *
@@ -121,7 +127,7 @@ public final class PolarisGrpcServerBuilder extends ServerBuilder<PolarisGrpcSer
         this.applicationName = applicationName;
         return this;
     }
-    
+
     /**
      * Namespace registered by grpc service.
      *
@@ -132,7 +138,7 @@ public final class PolarisGrpcServerBuilder extends ServerBuilder<PolarisGrpcSer
         this.namespace = namespace;
         return this;
     }
-    
+
     /**
      * Set metadata.
      *
@@ -170,7 +176,7 @@ public final class PolarisGrpcServerBuilder extends ServerBuilder<PolarisGrpcSer
         this.heartbeatInterval = heartbeatInterval;
         return this;
     }
-    
+
     /**
      * Set the local host.
      *
@@ -247,6 +253,91 @@ public final class PolarisGrpcServerBuilder extends ServerBuilder<PolarisGrpcSer
         } else {
             this.interceptors.add(interceptor);
         }
+        return this;
+    }
+
+
+    @Override
+    public PolarisGrpcServerBuilder addTransportFilter(ServerTransportFilter filter) {
+        builder.addTransportFilter(filter);
+        return this;
+    }
+
+    @Override
+    public PolarisGrpcServerBuilder addStreamTracerFactory(ServerStreamTracer.Factory factory) {
+        builder.addStreamTracerFactory(factory);
+        return this;
+    }
+
+    @Override
+    public PolarisGrpcServerBuilder useTransportSecurity(InputStream certChain, InputStream privateKey) {
+        super.useTransportSecurity(certChain, privateKey);
+        return this;
+    }
+
+    @Override
+    public PolarisGrpcServerBuilder handshakeTimeout(long timeout, TimeUnit unit) {
+        builder.handshakeTimeout(timeout, unit);
+        return this;
+    }
+
+    @Override
+    public PolarisGrpcServerBuilder keepAliveTime(long keepAliveTime, TimeUnit timeUnit) {
+        builder.keepAliveTime(keepAliveTime, timeUnit);
+        return this;
+    }
+
+    @Override
+    public PolarisGrpcServerBuilder keepAliveTimeout(long keepAliveTimeout, TimeUnit timeUnit) {
+        builder.keepAliveTimeout(keepAliveTimeout, timeUnit);
+        return this;
+    }
+
+    @Override
+    public PolarisGrpcServerBuilder maxConnectionIdle(long maxConnectionIdle, TimeUnit timeUnit) {
+        builder.maxConnectionIdle(maxConnectionIdle, timeUnit);
+        return this;
+    }
+
+    @Override
+    public PolarisGrpcServerBuilder maxConnectionAge(long maxConnectionAge, TimeUnit timeUnit) {
+        builder.maxConnectionAge(maxConnectionAge, timeUnit);
+        return this;
+    }
+
+    @Override
+    public PolarisGrpcServerBuilder maxConnectionAgeGrace(long maxConnectionAgeGrace, TimeUnit timeUnit) {
+        builder.maxConnectionAgeGrace(maxConnectionAgeGrace, timeUnit);
+        return this;
+    }
+
+    @Override
+    public PolarisGrpcServerBuilder permitKeepAliveTime(long keepAliveTime, TimeUnit timeUnit) {
+        builder.permitKeepAliveTime(keepAliveTime, timeUnit);
+        return this;
+    }
+
+    @Override
+    public PolarisGrpcServerBuilder permitKeepAliveWithoutCalls(boolean permit) {
+        builder.permitKeepAliveWithoutCalls(permit);
+        return this;
+    }
+
+    @Override
+    public PolarisGrpcServerBuilder maxInboundMessageSize(int bytes) {
+        builder.maxInboundMessageSize(bytes);
+        return this;
+    }
+
+    @Override
+    public PolarisGrpcServerBuilder maxInboundMetadataSize(int bytes) {
+        builder.maxInboundMetadataSize(bytes);
+        return this;
+    }
+
+    @Override
+    public PolarisGrpcServerBuilder setBinaryLog(BinaryLog binaryLog) {
+        builder.setBinaryLog(binaryLog);
         return this;
     }
 
