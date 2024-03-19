@@ -271,7 +271,7 @@ public final class PolarisGrpcServerBuilder extends ServerBuilder<PolarisGrpcSer
 
     @Override
     public PolarisGrpcServerBuilder useTransportSecurity(InputStream certChain, InputStream privateKey) {
-        super.useTransportSecurity(certChain, privateKey);
+        builder.useTransportSecurity(certChain, privateKey);
         return this;
     }
 
