@@ -149,10 +149,12 @@ public class PolarisNameResolver extends NameResolver {
 
     private void notifyListener(Listener2 listener, InstancesResponse response) {
         ServiceInstances serviceInstances = response.toServiceInstances();
-	List<EquivalentAddressGroup> equivalentAddressGroups = serviceInstances.getInstances()
-                .stream()
-                .map(this::buildEquivalentAddressGroup)
-                .collect(Collectors.toList());
+        List<EquivalentAddressGroup> equivalentAddressGroups = new ArrayList<>();
+        for (Instance instance : serviceInstances.getInstances()) {
+            if (Objects.equals("grpc", instance.getProtocol())) {
+                equivalentAddressGroups.add(buildEquivalentAddressGroup(instance));
+            }
+        }
 
         Attributes.Builder builder = Attributes.newBuilder();
 
